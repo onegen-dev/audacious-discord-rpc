@@ -13,6 +13,7 @@
 
 cmake_minimum_required(VERSION 3.10)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 if(WIN32)
   execute_process(COMMAND uname OUTPUT_VARIABLE uname)
@@ -33,7 +34,7 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif()
 
 add_compile_options(-Wall -Wextra -Wpedantic)
-set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -Ofast -march=native")
+set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -Ofast -march=x86-64-v2 -mtune=generic")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -Og -fsanitize=undefined")
 
 # === DEFINITION === #
