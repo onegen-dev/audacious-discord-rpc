@@ -136,11 +136,12 @@ Making a full-on release can take a while. At times, an issue can be fixed on gi
 but it can take a while until a release with a fix is made. If you are more technically
 aligned or want to help with development, you can always build this plugin yourself.
 
-**Pre-requisites**, no matter the platform, is Git, CMAKE and a C++ building toolchain.
+**Pre-requisites**, no matter the platform, is Git, CMAKE and a C++ building toolchain. \
 **On Linux**, you need to install cURL and Audacious development libraries via the native
 package manager (or wrapper idc) as `audacious-dev` (Debian/Ubuntu-based DEB) or `audacious-devel`
-(Red Hat-based RPM). The development libraries should be automatically installed on Arch-based
-distributions. **On Windows**, you need a [MSYS2](https://www.msys2.org) MINGW64 environment.
+(Red Hat-based RPM incl. SUSE). The development libraries should be automatically installed
+on Arch-based distributions. \
+**On Windows**, you need a [MSYS2](https://www.msys2.org) MINGW64 environment.
 To ensure all you need is installed on there, run this:
 
 ```bash
@@ -148,8 +149,12 @@ pacman -Syu
 pacman -S base-devel git mingw-w64-x86_64-toolchain mingw-w64-x86_64-gcc mingw-w64-x86_64-glib2 mingw-w64-x86_64-cmake mingw-w64-x86_64-pkg-config
 ```
 
-For cover art fetching capabilities, Linux uses cURL and Windows uses built-in WinHTTP. On
-distributions without cURL, it is possible to build the plugin with this functionality unavailable.
+For cover art fetching capabilities, Linux uses cURL and Windows uses built-in WinHTTP.
+WinHTTP should always be present on Windows, so it should always be included. For Linux,
+if CMake doesn’t detect cURL, it will warn you this functionality will be unavailable
+but it should still compile. Most distributions add cURL headers to the main cURL package,
+but some don’t (observed on openSUSE Leap), so you’ll need to additionally install
+`libcurl-devel` (name may slightly vary).
 
 After ensuring all the pre-requisites are installed, building is just a matter of calling `cmake`:
 
