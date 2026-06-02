@@ -35,7 +35,7 @@ endif()
 
 add_compile_options(-Wall -Wextra -Wpedantic)
 set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -Ofast -march=x86-64-v2 -mtune=generic")
-set(CMAKE_CXX_FLAGS_DEBUG "-g -Og -fsanitize=undefined")
+set(CMAKE_CXX_FLAGS_DEBUG "-g -Og -fsanitize=undefined -march=x86-64-v2 -mtune=generic")
 
 # === DEFINITION === #
 
