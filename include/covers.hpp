@@ -58,6 +58,65 @@ inline bool is_cancelled(const std::atomic<unsigned long long>* active_req_id,
      return active_req_id && (this_req_id != active_req_id->load());
 }
 
+/* === Structs for fetched objects === */
+
+/**
+ * MusicBrainz release object
+ * @see https://musicbrainz.org/doc/MusicBrainz_API/Search#Release
+ * @note Many fields in the schema irrelevant to this project are omitted.
+ *       Please refer to the full schema in the above link for more details
+ *       and potential capabilities and future additions.
+ * @date 2026-06-03
+ */
+struct MBRelease {
+     std::string id;            // MBID (UUID-like)
+     unsigned short int score;  // Relevance score (0-100)
+     std::string title;
+     std::string status;
+     std::string packaging;
+     std::string date;
+     std::string country;  // ISO 3166-1 alpha-2 code
+     std::string barcode;
+     unsigned int track_count = 1;
+     unsigned int disc_count = 1;
+};
+
+/** MusicBrainz release search result */
+struct MBReleaseSearchResult {
+     unsigned int count;
+     unsigned int offset;
+     std::vector<MBRelease> releases;
+};
+
+template <> struct glz::meta<MBRelease> {
+     static constexpr std::string_view rename_key(const std::string_view key) {
+          if (key == "text_representation") return "text-representation";
+          if (key == "artist_credit") return "artist-credit";
+          if (key == "release_group") return "release-group";
+          if (key == "track_count") return "track-count";
+          if (key == "disc_count") return "disc-count";
+          if (key == "label_info") return "label-info";
+     }
+};
+
+/**
+ * Cover Art Archive image object
+ * @see https://musicbrainz.org/doc/Cover_Art_Archive/API
+ */
+struct CAAImage {
+     std::string image;  // Full-size image URL
+     std::map<std::string, std::string> thumbnails;
+     std::vector<std::string> types;
+     bool front = false;
+     bool back = false;
+     bool approved = false;
+};
+
+struct CAAImageSearchResult {
+     std::string release;
+     std::vector<CAAImage> images;
+};
+
 /* === Exported Function === */
 
 std::optional<std::string> cover_lookup(
