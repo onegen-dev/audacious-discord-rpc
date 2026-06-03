@@ -6,6 +6,7 @@
                 "/usr/include/**",
                 "${workspaceFolder}/include/**",
                 "${workspaceFolder}/build/_deps/discord-rpc-src/**",
+                "${workspaceFolder}/build/_deps/glaze-src/**",
                 "${workspaceFolder}/build/_deps/nlohmann_json-src/**"
             ],
             "defines": [],
@@ -20,6 +21,7 @@
                 "${workspaceFolder}/include/**",
                 "${workspaceFolder}/build/_deps/audacious-src/src/**",
                 "${workspaceFolder}/build/_deps/discord-rpc-src/**",
+                "${workspaceFolder}/build/_deps/glaze-src/**",
                 "${workspaceFolder}/build/_deps/nlohmann_json-src/**"
             ],
             "defines": [

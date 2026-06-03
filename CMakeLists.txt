@@ -92,6 +92,18 @@ else()
   PKG_GET_VARIABLE(AUDACIOUS_PLUGIN_DIR audacious plugin_dir)
 endif()
 
+# == Glaze (for JSON deserialization) == #
+
+FetchContent_Declare(
+  glaze
+    GIT_REPOSITORY https://github.com/stephenberry/glaze.git
+    GIT_TAG main
+    GIT_PROGRESS TRUE
+    GIT_SHALLOW TRUE
+)
+
+FetchContent_MakeAvailable(glaze)
+
 # == O. Nemeš’s Discord RPC == #
 
 if(WIN32)
@@ -167,6 +179,7 @@ target_include_directories(audacious-discord-rpc PRIVATE
 )
 
 target_link_libraries(audacious-discord-rpc PRIVATE
+  glaze::glaze
   discord-rpc
   nlohmann_json::nlohmann_json
 )

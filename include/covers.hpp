@@ -13,6 +13,7 @@
 #define JSON_NOEXCEPTION
 
 #include <curl/curl.h>
+#include <glaze/glaze.hpp>
 #include <nlohmann/json.hpp>
 
 #include <optional>
