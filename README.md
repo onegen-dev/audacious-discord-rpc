@@ -1,5 +1,8 @@
 # Audacious Discord RPC
 
+> [!WARNING]
+> *Compatible with Audacious 4.5 only for now. 4.6 compatibility is actively worked on!* 😓
+
 Discord Rich Presence (RPC) plugin for [Audacious][1]! \
 Displays what you’re vibing to in your Discord profile. 🧑‍🎤🎶
 
