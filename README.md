@@ -133,6 +133,13 @@ might want to delete that, too. The older file was called `libaudacious-plugin-r
 sudo rm $(pkg-config --variable=plugin_dir audacious)/General/libaudacious-plugin-rpc.so
 ```
 
+### Compatibility Table
+
+| Audacious<br>version | Linux | Windows |
+|:---:|:---:|:---:|
+| 4.6.x | [2.4-indev.2](https://github.com/onegen-dev/audacious-discord-rpc/releases/download/v2.4-indev.2/auddrpc-dev2.4.2-x86-lin.tar.xz) (WiP) |  |
+| 4.5.x | [2.4-indev.1](https://github.com/onegen-dev/audacious-discord-rpc/releases/download/v2.3.1/auddrpc-v2.3.1-x86-lin.tar.xz) (recommended)<br>[2.3](https://github.com/onegen-dev/audacious-discord-rpc/releases/download/v2.3/auddrpc-v2.3-x86-lin.tar.xz) (stable) | [2.4-indev.1](https://github.com/onegen-dev/audacious-discord-rpc/releases/download/v2.3.1/auddrpc-v2.3.1-x86-win.zip) (recommended)<br>[2.3](https://github.com/onegen-dev/audacious-discord-rpc/releases/download/v2.3/auddrpc-v2.3-x86-win.zip) (stable) |
+
 ## Building
 
 Making a full-on release can take a while. At times, an issue can be fixed on git `master`
