@@ -10,5 +10,8 @@ build
 *.so
 *.a
 
+# Build fragments
+compile_commands.json
+
 # Cache
 .cache
