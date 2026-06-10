@@ -39,10 +39,11 @@ set(CMAKE_CXX_FLAGS_DEBUG "-g -Og -fsanitize=undefined -march=x86-64-v2 -mtune=g
 
 # === DEFINITION === #
 
-project(audacious-discord-rpc
-  VERSION 2.3
-  HOMEPAGE_URL https://github.com/onegentig/audacious-discord-rpc
-  LANGUAGES CXX
+project(
+  audacious-discord-rpc
+    VERSION 2.4
+    HOMEPAGE_URL https://github.com/onegen-dev/audacious-discord-rpc
+    LANGUAGES CXX
 )
 
 file(GLOB_RECURSE SOURCES "src/*.cpp")
@@ -64,8 +65,8 @@ target_compile_features(audacious-discord-rpc PUBLIC cxx_std_23)
 #
 
 if(WIN32)
-  set(audacious_VERSION "4.5.1")
-  FILE(DOWNLOAD https://distfiles.audacious-media-player.org/audacious-${audacious_VERSION}.tar.bz2
+  set(audacious_VERSION "4.6.1")
+  FILE(DOWNLOAD "https://distfiles.audacious-media-player.org/audacious-${audacious_VERSION}.tar.bz2"
     "${CMAKE_BINARY_DIR}/_deps/audacious.tar.bz2"
     SHOW_PROGRESS
   )
@@ -73,7 +74,7 @@ if(WIN32)
     INPUT "${CMAKE_BINARY_DIR}/_deps/audacious.tar.bz2"
     DESTINATION "_deps/audacious"
   )
-  FILE(COPY "${CMAKE_BINARY_DIR}/_deps/audacious/audacious-4.5.1/"
+  FILE(COPY "${CMAKE_BINARY_DIR}/_deps/audacious/audacious-${audacious_VERSION}/"
     DESTINATION "_deps/audacious-src"
     FOLLOW_SYMLINK_CHAIN
   )
@@ -87,7 +88,7 @@ if(WIN32)
     BUILD_IN_SOURCE TRUE
   )
 else()
-  PKG_SEARCH_MODULE(AUDACIOUS REQUIRED audacious>=4.0)
+  PKG_SEARCH_MODULE(AUDACIOUS REQUIRED audacious>=4.6)
   PKG_GET_VARIABLE(AUDACIOUS_PLUGIN_DIR audacious plugin_dir)
 endif()
 
@@ -103,7 +104,7 @@ endif()
 FetchContent_Declare(
   discord-rpc
     GIT_REPOSITORY https://github.com/EclipseMenu/discord-presence.git
-    GIT_TAG main
+    GIT_TAG 3b50b0854ec24f9b2d4cc8e28f9145f276bb998e
     GIT_PROGRESS TRUE
     UPDATE_DISCONNECTED ON
 )
