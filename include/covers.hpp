@@ -2,7 +2,7 @@
  * @file covers.hpp
  * @brief Cover art fetching functionality for Audacious Discord RPC.
  * @author onegen <onegen@onegen.dev>
- * @date 2026-03-06 (last modified)
+ * @date 2026-06-13 (last modified)
  *
  * @license MIT
  * @copyright Copyright (c) 2025 onegen
@@ -228,14 +228,33 @@ std::optional<std::string> cover_lookup(
           }
 
           for (const CAAImage& image : caa_res.images) {
-               if (image.front && image.thumbnails.contains("large")) {
-                    std::string image_url = image.thumbnails.at("large");
-                    cache.put(artist, album, image_url);
+               if (!image.front) continue;
+               std::string image_url;
+               if (image.thumbnails.contains("1200")) {
+                    image_url = image.thumbnails.at("1200");
                     AUDINFO(
-                        "Discord RPC: CAA found a front image (task %llu)\r\n",
+                        "Discord RPC: CAA found a large front image (task %llu)\r\n",
                         this_req_id);
-                    return image_url;
+               } else if (image.thumbnails.contains("500")) {
+                    image_url = image.thumbnails.at("500");
+                    AUDINFO(
+                        "Discord RPC: CAA found a medium front image (task %llu)\r\n",
+                        this_req_id);
+               } else if (image.thumbnails.contains("250")) {
+                    image_url = image.thumbnails.at("250");
+                    AUDINFO(
+                        "Discord RPC: CAA found a small front image (task %llu)\r\n",
+                        this_req_id);
+               } else {
+                    image_url = image.thumbnails.at("250");
+                    AUDINFO(
+                        "Discord RPC: CAA found a direct-only front image (task %llu)\r\n",
+                        this_req_id);
                }
+
+               if (image_url.empty()) continue;
+               cache.put(artist, album, image_url);
+               return image_url;
           }
 
           AUDINFO("Discord RPC: CAA found no front images (task %llu)\r\n",
