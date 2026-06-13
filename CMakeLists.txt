@@ -33,9 +33,9 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
 endif()
 
-add_compile_options(-Wall -Wextra -Wpedantic)
 set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -Ofast -march=x86-64-v2 -mtune=generic")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -Og -fsanitize=undefined -march=x86-64-v2 -mtune=generic")
+add_compile_options(-Wall -Wextra -Wpedantic -fdebug-prefix-map=${CMAKE_SOURCE_DIR}=. -ffile-prefix-map=${CMAKE_SOURCE_DIR}=.)
 
 # === DEFINITION === #
 
