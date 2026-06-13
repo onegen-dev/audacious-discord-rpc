@@ -1,10 +1,9 @@
 /**
  * @file audacious-discord-rpc.hpp
  * @brief Discord Rich Presence plugin for Audacious (header)
- * @version 2.3
  * @author onegen <onegen@onegen.dev>
  * @author Derzsi Dániel <daniel@tohka.us>
- * @date 2025-11-28 (last modified)
+ * @date 2026-06-13 (last modified)
  *
  * @license MIT
  * @copyright Copyright (c) 2024–2026 onegen
@@ -77,7 +76,7 @@ void cover_to_presence(
     const String &artist,
     const String &album);  // Attempts to fetch cover, if enabled
 
-void on_playback_update_rpc(void *, void *) { playback_to_presence(); }
+inline void on_playback_update_rpc(void *, void *) { playback_to_presence(); }
 
 /* === Utilities === */
 
