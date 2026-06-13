@@ -1,8 +1,8 @@
 # Audacious Discord RPC
 
 > [!WARNING]
-> *Audacious 4.6.1 wasn’t fully rolled out yet and isn’t yet supported (once it’s on OBS, I’ll work on it).*
-> *4.6(.0) compatibility is experimental but available; see [the compatibility table](#compatibility-table) for more info.*
+> *4.6.x compatibility is experimental and Linux-only, actively worked on!
+> *See [the compatibility table](#compatibility-table) for more info and correct download.*
 
 Discord Rich Presence (RPC) plugin for [Audacious][1]! \
 Displays what you’re vibing to in your Discord profile. 🧑‍🎤🎶
@@ -138,8 +138,8 @@ sudo rm $(pkg-config --variable=plugin_dir audacious)/General/libaudacious-plugi
 
 | Audacious<br>version | Linux | Windows |
 |:---:|:---:|:---:|
-| 4.6.1 | TODO ([14#issuecomment-4689404626](https://github.com/onegen-dev/audacious-discord-rpc/issues/14#issuecomment-4689404626)) |  |
-| 4.6.0 | [2.4-indev.2](https://github.com/onegen-dev/audacious-discord-rpc/releases/download/v2.4-indev.2/auddrpc-dev2.4.2-x86-lin.tar.xz) (WiP) |  |
+| 4.6.1 | [2.4-indev.3](https://github.com/onegen-dev/audacious-discord-rpc/releases/download/v2.4-indev.3/auddrpc-dev2.4.3-aud4.6.1-x86-lin.tar.xz) (experimental WiP) |  |
+| 4.6.0 | [2.4-indev.3](https://github.com/onegen-dev/audacious-discord-rpc/releases/download/v2.4-indev.3/auddrpc-dev2.4.3-aud4.6.0-x86-lin.tar.xz) (WiP) |  |
 | 4.5.x | [2.4-indev.1](https://github.com/onegen-dev/audacious-discord-rpc/releases/download/v2.3.1/auddrpc-v2.3.1-x86-lin.tar.xz) (recommended)<br>[2.3](https://github.com/onegen-dev/audacious-discord-rpc/releases/download/v2.3/auddrpc-v2.3-x86-lin.tar.xz) (stable) | [2.4-indev.1](https://github.com/onegen-dev/audacious-discord-rpc/releases/download/v2.3.1/auddrpc-v2.3.1-x86-win.zip) (recommended)<br>[2.3](https://github.com/onegen-dev/audacious-discord-rpc/releases/download/v2.3/auddrpc-v2.3-x86-win.zip) (stable) |
 
 ## Building
