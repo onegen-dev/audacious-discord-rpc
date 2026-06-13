@@ -6,7 +6,7 @@
                 "/usr/include/**",
                 "${workspaceFolder}/include/**",
                 "${workspaceFolder}/build/_deps/discord-rpc-src/**",
-                "${workspaceFolder}/build/_deps/nlohmann_json-src/**"
+                "${workspaceFolder}/build/_deps/glaze-src/**"
             ],
             "defines": [],
             "compilerPath": "/usr/lib64/ccache/g++",
@@ -20,7 +20,7 @@
                 "${workspaceFolder}/include/**",
                 "${workspaceFolder}/build/_deps/audacious-src/src/**",
                 "${workspaceFolder}/build/_deps/discord-rpc-src/**",
-                "${workspaceFolder}/build/_deps/nlohmann_json-src/**"
+                "${workspaceFolder}/build/_deps/glaze-src/**"
             ],
             "defines": [
                 "_DEBUG",

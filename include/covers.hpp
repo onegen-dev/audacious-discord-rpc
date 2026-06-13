@@ -2,7 +2,7 @@
  * @file covers.hpp
  * @brief Cover art fetching functionality for Audacious Discord RPC.
  * @author onegen <onegen@onegen.dev>
- * @date 2025-11-27 (last modified)
+ * @date 2026-03-06 (last modified)
  *
  * @license MIT
  * @copyright Copyright (c) 2025 onegen
@@ -13,7 +13,7 @@
 #define JSON_NOEXCEPTION
 
 #include <curl/curl.h>
-#include <nlohmann/json.hpp>
+#include <glaze/glaze.hpp>
 
 #include <optional>
 #include <string>
@@ -26,8 +26,6 @@
 #else
 #     include "fetch-lin.hpp"  // Uses cURL (libcurl)
 #endif
-
-using json = nlohmann::json;
 
 constexpr unsigned int FETCH_DEBOUNCE = 2000;  // [ms]
 constexpr unsigned int FETCH_MAX_RETRIES = 5;
@@ -56,6 +54,66 @@ inline bool is_cancelled(const std::atomic<unsigned long long>* active_req_id,
                          unsigned long long this_req_id) {
      return active_req_id && (this_req_id != active_req_id->load());
 }
+
+/* === Structs for fetched objects === */
+
+/**
+ * MusicBrainz release object
+ * @see https://musicbrainz.org/doc/MusicBrainz_API/Search#Release
+ * @note Many fields in the schema irrelevant to this project are omitted.
+ *       Please refer to the full schema in the above link for more details
+ *       and potential capabilities and future additions.
+ * @date 2026-06-03
+ */
+struct MBRelease {
+     std::string id;            // MBID (UUID-like)
+     unsigned short int score;  // Relevance score (0-100)
+     std::string title;
+     std::string status;
+     std::string packaging;
+     std::string date;
+     std::string country;  // ISO 3166-1 alpha-2 code
+     std::string barcode;
+     unsigned int track_count = 1;
+     unsigned int disc_count = 1;
+};
+
+/** MusicBrainz release search result */
+struct MBReleaseSearchResult {
+     unsigned int count;
+     unsigned int offset;
+     std::vector<MBRelease> releases;
+};
+
+template <> struct glz::meta<MBRelease> {
+     static constexpr std::string_view rename_key(const std::string_view key) {
+          if (key == "text_representation") return "text-representation";
+          if (key == "artist_credit") return "artist-credit";
+          if (key == "release_group") return "release-group";
+          if (key == "track_count") return "track-count";
+          if (key == "disc_count") return "disc-count";
+          if (key == "label_info") return "label-info";
+          return key;
+     }
+};
+
+/**
+ * Cover Art Archive image object
+ * @see https://musicbrainz.org/doc/Cover_Art_Archive/API
+ */
+struct CAAImage {
+     std::string image;  // Full-size image URL
+     std::map<std::string, std::string> thumbnails;
+     std::vector<std::string> types;
+     bool front = false;
+     bool back = false;
+     bool approved = false;
+};
+
+struct CAAImageSearchResult {
+     std::string release;
+     std::vector<CAAImage> images;
+};
 
 /* === Exported Function === */
 
@@ -117,18 +175,32 @@ std::optional<std::string> cover_lookup(
                continue;
           }
 
-          auto mb = json::parse(*mb_json, nullptr, false);
-          if (mb.is_discarded() || !mb.is_object() || mb["count"] == 0
-              || mb["releases"].empty()) {
+          MBReleaseSearchResult mb_res{};
+          glz::error_ctx error
+              = glz::read<glz::opts{.error_on_unknown_keys = false}>(mb_res,
+                                                                     *mb_json);
+          if (error) {
+               AUDINFO(
+                   "Discord RPC: MusicBrainz sent a bad JSON (task %llu)\r\n",
+                   this_req_id);
+               continue;
+          } else if (mb_res.count == 0 || mb_res.releases.empty()) {
                AUDINFO(
                    "Discord RPC: MusicBrainz found no releases (task %llu)\r\n",
                    this_req_id);
                return std::nullopt;
           }
-          auto release = mb["releases"][0];
-          if (release["score"] < 90)
-               return std::nullopt;  // No good-enough match
-          std::string mbid = release["id"];
+
+          MBRelease& mb_release = mb_res.releases[0];
+          if (mb_release.score < 90) {
+               AUDINFO(
+                   "Discord RPC: MusicBrainz found no good-enough releases "
+                   "(task %llu)\r\n",
+                   this_req_id);
+               return std::nullopt;
+          }
+
+          std::string mbid = mb_release.id;
           AUDINFO("Discord RPC: MusicBrainz found release %s (task %llu)\r\n",
                   mbid.c_str(), this_req_id);
 
@@ -142,18 +214,22 @@ std::optional<std::string> cover_lookup(
           }
 
           // CAA (parse and find front cover)
-          auto caa = json::parse(*caa_json, nullptr, false);
-          if (caa.is_discarded() || !caa.is_object() || caa["images"].empty()) {
+          CAAImageSearchResult caa_res{};
+          error = glz::read<glz::opts{.error_on_unknown_keys = false}>(
+              caa_res, *caa_json);
+          if (error) {
+               AUDINFO("Discord RPC: CAA sent a bad JSON (task %llu)\r\n",
+                       this_req_id);
+               continue;
+          } else if (caa_res.images.empty()) {
                AUDINFO("Discord RPC: CAA found no images (task %llu)\r\n",
                        this_req_id);
                return std::nullopt;
           }
 
-          for (auto& image : caa["images"]) {
-               if (image.contains("front") && image["front"] == true
-                   && image.contains("thumbnails")
-                   && image["thumbnails"].contains("large")) {
-                    std::string image_url = image["thumbnails"]["large"];
+          for (const CAAImage& image : caa_res.images) {
+               if (image.front && image.thumbnails.contains("large")) {
+                    std::string image_url = image.thumbnails.at("large");
                     cache.put(artist, album, image_url);
                     AUDINFO(
                         "Discord RPC: CAA found a front image (task %llu)\r\n",
@@ -165,7 +241,6 @@ std::optional<std::string> cover_lookup(
           AUDINFO("Discord RPC: CAA found no front images (task %llu)\r\n",
                   this_req_id);
           return std::nullopt;
-
      } while (++tries < FETCH_MAX_RETRIES);
 
      AUDINFO(
