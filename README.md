@@ -1,7 +1,7 @@
 # Audacious Discord RPC
 
 > [!WARNING]
-> *4.6.x compatibility is experimental and Linux-only, actively worked on!
+> *4.6.x compatibility is experimental and Linux-only for now (actively worked on)!*
 > *See [the compatibility table](#compatibility-table) for more info and correct download.*
 
 Discord Rich Presence (RPC) plugin for [Audacious][1]! \
