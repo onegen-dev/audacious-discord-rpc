@@ -43,7 +43,7 @@ project(
 )
 
 file(GLOB_RECURSE SOURCES "src/*.cpp")
-add_library(audacious-discord-rpc SHARED ${SOURCES})
+add_library(audacious-discord-rpc MODULE ${SOURCES})
 target_include_directories(audacious-discord-rpc PRIVATE "include")
 target_compile_features(audacious-discord-rpc PUBLIC cxx_std_23)
 
@@ -91,9 +91,10 @@ target_compile_options(audacious-discord-rpc
 
 target_link_options(audacious-discord-rpc
   PRIVATE
-    -pie  # Position-independant executable
+    $<$<BOOL:${WIN32}>:-Wl,--exclude-all-symbols>
 
     $<$<AND:$<CONFIG:Release>,$<NOT:$<BOOL:${WIN32}>>>:
+      -pie                  # Position-independant executable
       -Wl,-z,relro,-z,now   # Full RELRO
       -Wl,-z,noexecstack    # Non-executable stack
       -Wl,-z,separate-code  # Separate data and code
