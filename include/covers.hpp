@@ -235,18 +235,18 @@ std::optional<std::string> cover_lookup(
                     AUDINFO(
                         "Discord RPC: CAA found a large front image (task %llu)\r\n",
                         this_req_id);
-               } else if (image.thumbnails.contains("500")) {
-                    image_url = image.thumbnails.at("500");
+               } else if (image.thumbnails.contains("large")) {
+                    image_url = image.thumbnails.at("large");
                     AUDINFO(
                         "Discord RPC: CAA found a medium front image (task %llu)\r\n",
                         this_req_id);
-               } else if (image.thumbnails.contains("250")) {
-                    image_url = image.thumbnails.at("250");
+               } else if (image.thumbnails.contains("small")) {
+                    image_url = image.thumbnails.at("small");
                     AUDINFO(
                         "Discord RPC: CAA found a small front image (task %llu)\r\n",
                         this_req_id);
                } else {
-                    image_url = image.thumbnails.at("250");
+                    image_url = image.image;
                     AUDINFO(
                         "Discord RPC: CAA found a direct-only front image (task %llu)\r\n",
                         this_req_id);
