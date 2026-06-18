@@ -158,7 +158,7 @@ To ensure all you need is installed on there, run this:
 
 ```bash
 pacman -Syu
-pacman -S base-devel git mingw-w64-x86_64-toolchain mingw-w64-x86_64-gcc mingw-w64-x86_64-glib2 mingw-w64-x86_64-cmake mingw-w64-x86_64-pkg-config
+pacman -S base-devel git mingw-w64-x86_64-toolchain mingw-w64-x86_64-gcc mingw-w64-x86_64-glib2 mingw-w64-x86_64-cmake mingw-w64-x86_64-meson mingw-w64-x86_64-pkg-config
 ```
 
 For cover art fetching capabilities, Linux uses cURL and Windows uses built-in WinHTTP.

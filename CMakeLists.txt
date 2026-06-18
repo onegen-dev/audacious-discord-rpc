@@ -114,7 +114,9 @@ target_link_options(audacious-discord-rpc
 #
 
 if(WIN32)
+  find_program(MESON_EXECUTABLE meson REQUIRED)
   set(audacious_VERSION "4.6.1")
+  set(AUDACIOUS_INSTALL_DIR "${CMAKE_BINARY_DIR}/_deps/audacious-install")
   FILE(DOWNLOAD "https://distfiles.audacious-media-player.org/audacious-${audacious_VERSION}.tar.bz2"
     "${CMAKE_BINARY_DIR}/_deps/audacious.tar.bz2"
     SHOW_PROGRESS
@@ -131,10 +133,16 @@ if(WIN32)
   FILE(REMOVE "${CMAKE_BINARY_DIR}/_deps/audacious.tar.bz2")
   ExternalProject_Add(audacious
     SOURCE_DIR "${CMAKE_BINARY_DIR}/_deps/audacious-src"
-    CONFIGURE_COMMAND bash -c "./configure --disable-qt --disable-gtk"
-    BUILD_COMMAND make
-    INSTALL_COMMAND ""
-    BUILD_IN_SOURCE TRUE
+    BINARY_DIR "${CMAKE_BINARY_DIR}/_deps/audacious-build"
+    CONFIGURE_COMMAND "${MESON_EXECUTABLE}" setup <BINARY_DIR> <SOURCE_DIR>
+      --prefix=${AUDACIOUS_INSTALL_DIR}
+      --libdir=lib
+      --includedir=include
+      -Dqt=false
+      -Dgtk=false
+      -Ddbus=false
+    BUILD_COMMAND "${MESON_EXECUTABLE}" compile -C <BINARY_DIR>
+    INSTALL_COMMAND "${MESON_EXECUTABLE}" install -C <BINARY_DIR>
   )
 else()
   PKG_SEARCH_MODULE(AUDACIOUS REQUIRED audacious>=4.6)
@@ -206,8 +214,8 @@ endif()
 if(WIN32)
   # Self-built Audacious on Windows
   add_dependencies(audacious-discord-rpc audacious)
-  target_include_directories(audacious-discord-rpc PRIVATE "${CMAKE_BINARY_DIR}/_deps/audacious-src/src")
-  target_link_directories(audacious-discord-rpc PRIVATE "${CMAKE_BINARY_DIR}/_deps/audacious-src/src/libaudcore")
+  target_include_directories(audacious-discord-rpc PRIVATE "${AUDACIOUS_INSTALL_DIR}/include")
+  target_link_directories(audacious-discord-rpc PRIVATE "${AUDACIOUS_INSTALL_DIR}/lib")
   target_link_libraries(audacious-discord-rpc PRIVATE audcore)
 endif()
 
