@@ -99,6 +99,10 @@ target_link_options(audacious-discord-rpc
       -Wl,-z,noexecstack    # Non-executable stack
       -Wl,-z,separate-code  # Separate data and code
     >
+
+    $<$<CONFIG:Debug>:
+      -fsanitize=undefined
+    >
 )
 
 # === DEPENDENCIES === #
