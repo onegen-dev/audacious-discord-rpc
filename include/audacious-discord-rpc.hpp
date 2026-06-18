@@ -42,7 +42,11 @@
 #     include "covers.hpp"
 #endif
 
-#define EXPORT __attribute__((visibility("default")))
+#ifdef _WIN32
+#     define EXPORT __declspec(dllexport)
+#else
+#     define EXPORT __attribute__((visibility("default")))
+#endif
 
 #define PLUGIN_NAME "Discord RPC"
 #define PLUGIN_ID "discord-rpc"
