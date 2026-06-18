@@ -14,6 +14,7 @@
 cmake_minimum_required(VERSION 3.10)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
 
 if(WIN32)
   execute_process(COMMAND uname OUTPUT_VARIABLE uname)
@@ -27,16 +28,10 @@ include(FindPkgConfig)
 include(ExternalProject)
 find_package(Git REQUIRED)
 
-# === COMPILER OPTS === #
-
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
 endif()
 
-set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
-set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -Ofast -march=x86-64-v2 -mtune=generic")
-set(CMAKE_CXX_FLAGS_DEBUG "-g -Og -fsanitize=undefined -march=x86-64-v2 -mtune=generic")
-add_compile_options(-Wall -Wextra -Wpedantic -fdebug-prefix-map=${CMAKE_SOURCE_DIR}=. -ffile-prefix-map=${CMAKE_SOURCE_DIR}=.)
 
 # === DEFINITION === #
 
@@ -51,6 +46,59 @@ file(GLOB_RECURSE SOURCES "src/*.cpp")
 add_library(audacious-discord-rpc SHARED ${SOURCES})
 target_include_directories(audacious-discord-rpc PRIVATE "include")
 target_compile_features(audacious-discord-rpc PUBLIC cxx_std_23)
+
+# == Compilation Options == #
+target_compile_options(audacious-discord-rpc
+  PRIVATE
+    # Warnings
+    -Wall
+    -Wextra
+    -Wpedantic
+
+    # Generic x86_64_v2 microarchitecture as minimum (#10#issuecomment-4596109645)
+    -march=x86-64-v2
+    -mtune=generic
+
+    # Release
+    # @note Safety hardening flags from systemshardening.com
+    # @see https://www.systemshardening.com/articles/linux/linux-memory-protections
+    $<$<CONFIG:Release>:
+      -DNDEBUG                    # Do Not DEBUG?
+      -Ofast                      # Gotta go fast!
+      -fstack-protector-strong    # Protecting stacks with buffers
+      -fstack-clash-protection    # Probing stacks to prevent clashes
+      -fcf-protection=full        # Intel CET control-flow integrity
+      # This should remove paths from the source code
+      -fdebug-prefix-map=${CMAKE_SOURCE_DIR}=..
+      -ffile-prefix-map=${CMAKE_SOURCE_DIR}=..
+      $<$<NOT:$<BOOL:${WIN32}>>:  # Linux-only flags
+        -D_FORTIFY_SOURCE=2       # Safety-hardened buffers, hardened libc bounds
+      >
+    >
+
+    # Debug (all the debug symbols!)
+    $<$<CONFIG:Debug>:
+      -g
+      -Og                   # Optimise for debugging
+      -fsanitize=undefined  # UBSan
+      $<$<NOT:$<BOOL:${WIN32}>>:  # Linux-only flags
+        -D_GLIBCXX_ASSERTIONS     # C++ STL boundary checks
+      >
+    >
+
+  -fPIC # Position-independant code
+)
+
+target_link_options(audacious-discord-rpc
+  PRIVATE
+    -pie  # Position-independant executable
+
+    $<$<AND:$<CONFIG:Release>,$<NOT:$<BOOL:${WIN32}>>>:
+      -Wl,-z,relro,-z,now   # Full RELRO
+      -Wl,-z,noexecstack    # Non-executable stack
+      -Wl,-z,separate-code  # Separate data and code
+    >
+)
 
 # === DEPENDENCIES === #
 
@@ -98,7 +146,7 @@ endif()
 FetchContent_Declare(
   glaze
     GIT_REPOSITORY https://github.com/stephenberry/glaze.git
-    GIT_TAG main
+    GIT_TAG "v7.8.1"
     GIT_PROGRESS TRUE
     GIT_SHALLOW TRUE
 )
