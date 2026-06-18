@@ -221,8 +221,8 @@ if(WIN32)
   add_dependencies(audacious-discord-rpc audacious)
   target_include_directories(audacious-discord-rpc PRIVATE "${AUDACIOUS_INSTALL_DIR}/include")
   target_link_directories(audacious-discord-rpc PRIVATE "${AUDACIOUS_INSTALL_DIR}/lib")
-  target_link_libraries(audacious-discord-rpc PRIVATE audcore)
 endif()
+target_link_libraries(audacious-discord-rpc PRIVATE audcore)
 
 target_include_directories(audacious-discord-rpc PRIVATE
   "${discord-rpc_SOURCE_DIR}/include"
