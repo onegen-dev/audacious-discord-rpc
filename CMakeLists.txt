@@ -7,14 +7,14 @@
 #
 # @code{.sh}
 # cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-# cmake --build build -j
+# cmake --build build -j$(nproc)
 # @endcode
 #
 
 cmake_minimum_required(VERSION 3.10)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE OFF)
 
 if(WIN32)
   execute_process(COMMAND uname OUTPUT_VARIABLE uname)
@@ -31,7 +31,6 @@ find_package(Git REQUIRED)
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
 endif()
-
 
 # === DEFINITION === #
 
@@ -86,7 +85,7 @@ target_compile_options(audacious-discord-rpc
       >
     >
 
-  -fPIC # Position-independant code
+  -fPIC # Position-independent code
 )
 
 target_link_options(audacious-discord-rpc
@@ -94,7 +93,6 @@ target_link_options(audacious-discord-rpc
     $<$<BOOL:${WIN32}>:-Wl,--exclude-all-symbols>
 
     $<$<AND:$<CONFIG:Release>,$<NOT:$<BOOL:${WIN32}>>>:
-      -pie                  # Position-independant executable
       -Wl,-z,relro,-z,now   # Full RELRO
       -Wl,-z,noexecstack    # Non-executable stack
       -Wl,-z,separate-code  # Separate data and code
