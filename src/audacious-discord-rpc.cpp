@@ -220,11 +220,13 @@ void cover_to_presence(const String &artist, const String &album) {
 #if (defined(DISABLE_RPC_CAF) && DISABLE_RPC_CAF)
      return;
 #else
+     std::string artist_str = (const char *)artist;
+     std::string album_str = (const char *)album;
      unsigned long long req_id = ++req_id_now;
-     std::thread([req_id, artist, album] {
+     std::thread([req_id, artist_str = std::move(artist_str),
+                  album_str = std::move(album_str)] {
           if (req_id != req_id_now.load(std::memory_order_relaxed)) return;
-          auto url = cover_lookup((const char *)artist, (const char *)album,
-                                  &req_id_now, req_id);
+          auto url = cover_lookup(artist_str, album_str, &req_id_now, req_id);
           if (url && !url->empty()
               && req_id == req_id_now.load(std::memory_order_relaxed)) {
                std::lock_guard<std::mutex> lock(rpc_lock);
