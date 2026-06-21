@@ -84,12 +84,12 @@ inline void on_playback_update_rpc(void *, void *) { playback_to_presence(); }
 
 /* === Utilities === */
 
-bool audstr_empty(const String &str) {
+inline bool audstr_empty(const String &str) {
      const char *str_c = str;
      return (!str_c || !*str_c || strlen(str_c) == 0);
 }
 
-String field_sanitise(const String &field) {
+inline String field_sanitise(const String &field) {
      if (audstr_empty(field)) return String("[unknown]");
 
      const char *field_c = field;
@@ -107,7 +107,7 @@ String field_sanitise(const String &field) {
      return String(str_concat({str_copy(field_c, ofst_end), "..."}).settle());
 }
 
-void open_github() {
+inline void open_github() {
 #ifdef _WIN32
      auto ret
          = ShellExecuteW(NULL, L"open", L"" PLUGIN_URL, NULL, NULL, SW_NORMAL);

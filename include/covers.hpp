@@ -117,7 +117,8 @@ struct CAAImageSearchResult {
 
 /* === Exported Function === */
 
-std::optional<std::string> cover_lookup(
+// TODO: Function this big probably should not be in a header file.
+inline std::optional<std::string> cover_lookup(
     const std::string& artist, const std::string& album,
     const std::atomic<unsigned long long>* active_req_id = nullptr,
     unsigned long long this_req_id = 0) {
@@ -233,22 +234,26 @@ std::optional<std::string> cover_lookup(
                if (image.thumbnails.contains("1200")) {
                     image_url = image.thumbnails.at("1200");
                     AUDINFO(
-                        "Discord RPC: CAA found a large front image (task %llu)\r\n",
+                        "Discord RPC: CAA found a large front image (task "
+                        "%llu)\r\n",
                         this_req_id);
                } else if (image.thumbnails.contains("large")) {
                     image_url = image.thumbnails.at("large");
                     AUDINFO(
-                        "Discord RPC: CAA found a medium front image (task %llu)\r\n",
+                        "Discord RPC: CAA found a medium front image (task "
+                        "%llu)\r\n",
                         this_req_id);
                } else if (image.thumbnails.contains("small")) {
                     image_url = image.thumbnails.at("small");
                     AUDINFO(
-                        "Discord RPC: CAA found a small front image (task %llu)\r\n",
+                        "Discord RPC: CAA found a small front image (task "
+                        "%llu)\r\n",
                         this_req_id);
                } else {
                     image_url = image.image;
                     AUDINFO(
-                        "Discord RPC: CAA found a direct-only front image (task %llu)\r\n",
+                        "Discord RPC: CAA found a direct-only front image "
+                        "(task %llu)\r\n",
                         this_req_id);
                }
 
