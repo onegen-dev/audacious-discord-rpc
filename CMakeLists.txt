@@ -240,9 +240,6 @@ if(NOT DISABLE_RPC_CAF)
   endif()
 endif()
 
-if(CURL_FOUND AND NOT DISABLE_RPC_CAF)
-endif()
-
 set_target_properties(audacious-discord-rpc
   PROPERTIES
     PREFIX ""
@@ -255,7 +252,7 @@ if(WIN32)
   # No simple app location exposure on Windows -> use default install dir
   set(INSTALL_DIR "C:/Program Files (x86)/Audacious/lib/audacious/General")
 else()
-  # pkg-config should have this info
+  # Plugin location determined by pkg-config
   set(INSTALL_DIR "${AUDACIOUS_PLUGIN_DIR}/General")
 endif()
 
