@@ -79,9 +79,9 @@ target_compile_options(audacious-discord-rpc
     $<$<CONFIG:Debug>:
       -g
       -Og                   # Optimise for debugging
-      -fsanitize=undefined  # UBSan
       $<$<NOT:$<BOOL:${WIN32}>>:  # Linux-only flags
         -D_GLIBCXX_ASSERTIONS     # C++ STL boundary checks
+        -fsanitize=undefined      # UBSan
       >
     >
 
@@ -90,16 +90,20 @@ target_compile_options(audacious-discord-rpc
 
 target_link_options(audacious-discord-rpc
   PRIVATE
-    $<$<BOOL:${WIN32}>:-Wl,--exclude-all-symbols>
+    $<$<NOT:$<BOOL:${WIN32}>>:  # Linux-only
+      $<$<CONFIG:Release>:      # Release builds
+        -Wl,-z,relro,-z,now   # Full RELRO
+        -Wl,-z,noexecstack    # Non-executable stack
+        -Wl,-z,separate-code  # Separate data and code
+      >
 
-    $<$<AND:$<CONFIG:Release>,$<NOT:$<BOOL:${WIN32}>>>:
-      -Wl,-z,relro,-z,now   # Full RELRO
-      -Wl,-z,noexecstack    # Non-executable stack
-      -Wl,-z,separate-code  # Separate data and code
+      $<$<CONFIG:Debug>: # Debug builds
+        -fsanitize=undefined  # UBSan
+      >
     >
 
-    $<$<CONFIG:Debug>:
-      -fsanitize=undefined
+    $<$<BOOL:${WIN32}>: # Windows-only
+      -Wl,--exclude-all-symbols
     >
 )
 
@@ -189,27 +193,47 @@ if(IS_DIRECTORY "${discord-rpc_SOURCE_DIR}")
   )
 endif()
 
-# == cURL == #
+# == cURL / WinHTTP == #
 #
-# cURL is not included in the Windows installed package, so
-# on most environments it would fail to link. Thus,
-# cURL requiring capability of cover art fetching is disabled there.
+# This plugin uses cURL to fetch remote content on Linux et sim,
+# and WinHTTP (OS built-in interface) on Windows. As of now,
+# the cover fetching is still considered unstable so people
+# can disable cover art fetching (CAF) with DISABLE_RPC_CAF.
+# If system fails to find cURL, the build doesn’t fail, only warning
+# CAF is implicitly disabled and it moves on without it.
+#
+# @note Cover art fetching is opt-in in the plugin settings.
+#       Release pre-builds have cover art fetching enabled as such.
+#       Disabling them at build-time means this feature won’t even
+#       appear there. Omitting the feature logically results
+#       in a smaller binary.
+#
+# @todo Make an `option` for disabling CAF and drop the arbitrary
+#             abbreviation.
 #
 
-if(WIN32)
-  set(DISABLE_RPC_CAF FALSE)
-  set(CURL_FOUND FALSE)
-  message(STATUS "WIN build: WinHTTP will be used for cover art fetching.")
-else()
-  find_package(CURL QUIET)
-  if(NOT CURL_FOUND)
-    set(DISABLE_RPC_CAF TRUE)
-    target_compile_definitions(audacious-discord-rpc PRIVATE DISABLE_RPC_CAF=1)
-    message(WARNING "LIN build, no cURL: cover art fetching disabled.")
-  else()
+if(NOT DISABLE_RPC_CAF)
+  if(WIN32)
     set(DISABLE_RPC_CAF FALSE)
-    message(STATUS "LIN build, found cURL: cURL will be used for cover art fetching.")
+    set(CURL_FOUND FALSE)
+    message(STATUS "WIN build: WinHTTP will be used for cover art fetching.")
+  else()
+    find_package(CURL QUIET)
+    if(NOT CURL_FOUND)
+      set(DISABLE_RPC_CAF TRUE)
+      message(WARNING "LIN build, no cURL: cover art fetching disabled.")
+    else()
+      set(DISABLE_RPC_CAF FALSE)
+      message(STATUS "LIN build, found cURL: cURL will be used for cover art fetching.")
+    endif()
   endif()
+else()
+  message(STATUS "DISABLE_RPC_CAF acknowledged, cover art fetching manually disabled.")
+endif()
+
+# Once determined in the decision tree above, set the compile flag:
+if(DISABLED_RPC_CAF)
+  target_compile_definitions(audacious-discord-rpc PRIVATE DISABLE_RPC_CAF=1)
 endif()
 
 # === LINKING === #
