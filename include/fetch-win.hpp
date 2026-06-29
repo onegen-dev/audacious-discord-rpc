@@ -16,7 +16,6 @@
 
 #include <winhttp.h>
 
-#include <codecvt>
 #include <optional>
 #include <string>
 
