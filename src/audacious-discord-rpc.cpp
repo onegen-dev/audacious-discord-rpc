@@ -1,10 +1,9 @@
 /**
  * @file audacious-discord-rpc.cpp
  * @brief Discord Rich Presence plugin for Audacious
- * @version 2.3
  * @author onegen <onegen@onegen.dev>
  * @author Derzsi Dániel <daniel@tohka.us>
- * @date 2025-11-29 (last modified)
+ * @date 2026-06-29 (last modified)
  *
  * @license MIT
  * @copyright Copyright (c) 2024–2026 onegen
@@ -21,7 +20,7 @@ class RPCPlugin : public GeneralPlugin {
      static const char about[];
      static const PreferencesWidget widgets[];
      static const PluginPreferences prefs;
-     static const char *const defaults[];
+     static const char* const defaults[];
 
      static constexpr PluginInfo info
          = {N_(PLUGIN_NAME), PLUGIN_ID, about, &prefs, 0};
@@ -60,16 +59,14 @@ const PreferencesWidget RPCPlugin::widgets[] = {
                 {{status_display_items}, nullptr}),
     WidgetButton(N_("Show on GitHub"), {open_github, nullptr})};
 
-const char *const RPCPlugin::defaults[] = {
+static_assert(DISCORD_DEFAULT_DISPLAY == 0,
+              "defaults[] status_display_type is out of sync!");
+
+const char* const RPCPlugin::defaults[] = {
 #if (!(defined(DISABLE_RPC_CAF)) && !(DISABLE_RPC_CAF))
-    "fetch_covers",
-    "FALSE",
+    "fetch_covers",     "FALSE",
 #endif
-    "hide_when_paused",
-    "FALSE",
-    "status_display_type",
-    int_to_str(DISCORD_DEFAULT_DISPLAY),
-    nullptr};
+    "hide_when_paused", "FALSE", "status_display_type", "0", nullptr};
 
 const PluginPreferences RPCPlugin::prefs
     = {{widgets}, nullptr, nullptr, nullptr};
@@ -78,12 +75,12 @@ EXPORT RPCPlugin aud_plugin_instance;
 
 /* === Discord RPC Setup === */
 
-static discord::RPCManager &conn = discord::RPCManager::get();
+static discord::RPCManager& conn = discord::RPCManager::get();
 static discord::Presence rpc;
 
 void init_discord() {
      conn.setClientID(DISCORD_APP_ID);
-     conn.onReady([](const discord::User &) {
+     conn.onReady([](const discord::User&) {
               is_connected.store(true);
               AUDINFO("Discord RPC connected.\r\n");
               playback_to_presence();  // Directly played track? #8
@@ -172,9 +169,9 @@ void playback_to_presence() {
          .setActivityType(discord::ActivityType::Listening)
          .setStatusDisplayType(
              static_cast<discord::StatusDisplayType>(status_display_type))
-         .setDetails((const char *)title)
-         .setState((const char *)artist)
-         .setLargeImageText((const char *)album)
+         .setDetails((const char*)title)
+         .setState((const char*)artist)
+         .setLargeImageText((const char*)album)
          .setSmallImageKey(playing ? "play" : "pause")
          .setSmallImageText("Audacious");
 
@@ -216,12 +213,12 @@ void playback_to_presence() {
 
 /* == Attempt to fetch cover art, if enabled */
 
-void cover_to_presence(const String &artist, const String &album) {
+void cover_to_presence(const String& artist, const String& album) {
 #if (defined(DISABLE_RPC_CAF) && DISABLE_RPC_CAF)
      return;
 #else
-     std::string artist_str = (const char *)artist;
-     std::string album_str = (const char *)album;
+     std::string artist_str = (const char*)artist;
+     std::string album_str = (const char*)album;
      unsigned long long req_id = ++req_id_now;
      std::thread([req_id, artist_str = std::move(artist_str),
                   album_str = std::move(album_str)] {
