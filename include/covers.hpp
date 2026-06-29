@@ -10,7 +10,6 @@
  */
 
 #pragma once
-#define JSON_NOEXCEPTION
 
 #include <glaze/glaze.hpp>
 
