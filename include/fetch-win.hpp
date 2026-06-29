@@ -143,7 +143,7 @@ static std::optional<std::string> fetch(const std::string& url) noexcept {
           }
 
           if (!n_available) break;
-          char* buf = new char[n_available];
+          char* buf = new (std::nothrow) char[n_available];
           if (!buf) {
                AUDINFO("Discord RPC WinHTTP fetch failed: %s\r\n",
                        GetLastErrorAsString().c_str());
