@@ -121,11 +121,10 @@ static std::optional<std::string> fetch(const std::string& url) noexcept {
           return std::nullopt;
      }
 
-     bool res = WinHttpSetTimeouts(req, FETCH_TIMEO, FETCH_TIMEO, FETCH_TIMEO,
-                                   FETCH_TIMEO);
-     if (res) res |= WinHttpSendRequest(req, NULL, 0, NULL, 0, 0, 0);
-     if (res) res |= WinHttpReceiveResponse(req, NULL);
-     if (!res) {
+     if (!WinHttpSetTimeouts(req, FETCH_TIMEO, FETCH_TIMEO, FETCH_TIMEO,
+                             FETCH_TIMEO)
+         || !WinHttpSendRequest(req, NULL, 0, NULL, 0, 0, 0)
+         || !WinHttpReceiveResponse(req, NULL)) {
           AUDINFO("Discord RPC WinHTTP fetch failed: %s\r\n",
                   GetLastErrorAsString().c_str());
           cleanup();
