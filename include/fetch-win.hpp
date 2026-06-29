@@ -3,7 +3,7 @@
  * @brief WinHTTP-based fetcher for use on Windows 10+.
  * @note Made for Audacious-Discord-RPC project.
  * @author onegen <onegen@onegen.dev>
- * @date 2025-11-24 (last modified)
+ * @date 2026-06-29 (last modified)
  *
  * @license MIT
  * @copyright Copyright (c) 2025–2026 onegen
