@@ -2,17 +2,15 @@
  * @file covers.hpp
  * @brief Cover art fetching functionality for Audacious Discord RPC.
  * @author onegen <onegen@onegen.dev>
- * @date 2026-06-13 (last modified)
+ * @date 2026-06-29 (last modified)
  *
  * @license MIT
- * @copyright Copyright (c) 2025 onegen
+ * @copyright Copyright (c) 2025–2026 onegen
  *
  */
 
 #pragma once
-#define JSON_NOEXCEPTION
 
-#include <curl/curl.h>
 #include <glaze/glaze.hpp>
 
 #include <optional>
