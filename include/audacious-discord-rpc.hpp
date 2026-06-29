@@ -3,7 +3,7 @@
  * @brief Discord Rich Presence plugin for Audacious (header)
  * @author onegen <onegen@onegen.dev>
  * @author Derzsi Dániel <daniel@tohka.us>
- * @date 2026-06-13 (last modified)
+ * @date 2026-06-29 (last modified)
  *
  * @license MIT
  * @copyright Copyright (c) 2024–2026 onegen
@@ -54,11 +54,11 @@
 #define DISCORD_APP_ID "1428914566795890738"
 
 /** Mutual access lock to presence data editing */
-std::mutex rpc_lock;
+inline std::mutex rpc_lock;
 /** "Is Discord connected?" atomic flag */
-static std::atomic<bool> is_connected{false};
+inline std::atomic<bool> is_connected{false};
 /** Current cover fetching request number */
-static std::atomic<unsigned long long> req_id_now{0};
+inline std::atomic<unsigned long long> req_id_now{0};
 /** Checks if the req_id is stale */
 inline bool cover_fetch_stop(unsigned long long req_id) {
      return req_id != req_id_now.load();
