@@ -256,6 +256,7 @@ bool RPCPlugin::init() {
 }
 
 void RPCPlugin::cleanup() {
+     ++req_id_now;
      hook_dissociate("playback ready", on_playback_update_rpc);
      hook_dissociate("playback end", on_playback_update_rpc);
      hook_dissociate("playback stop", on_playback_update_rpc);
