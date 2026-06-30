@@ -2,7 +2,7 @@
  * @file cover-cache.hpp
  * @brief Cache for album cover arts for Audacious Discord RPC (experimental)
  * @author onegen <onegen@onegen.dev>
- * @date 2025-11-27 (last modified)
+ * @date 2026-06-30 (last modified)
  *
  * @note Custom solution for minimalism and not having to tackle with deps.
  *       Uses LRU eviction policy + no admission policy.
@@ -16,6 +16,7 @@
 
 #include <chrono>
 #include <list>
+#include <mutex>
 #include <optional>
 #include <string>
 #include <unordered_map>
@@ -61,6 +62,7 @@ class CoverArtCache {
 
      std::optional<std::string> get(const std::string& artist,
                                     const std::string& album) {
+          std::lock_guard<std::mutex> lk(this->cache_lock);
           std::string k = key(artist, album);
           auto map_it = cachemap.find(k);
           if (map_it == cachemap.end()) return std::nullopt;
@@ -82,6 +84,7 @@ class CoverArtCache {
 
      void put(const std::string& artist, const std::string& album,
               const std::string& val) {
+          std::lock_guard<std::mutex> lk(this->cache_lock);
           std::string k = key(artist, album);
           if ((2 * k.size()) + val.size() + TIMESTAMP_SIZE > opts.max_bytes) {
                AUDDBG(
@@ -115,6 +118,7 @@ class CoverArtCache {
      }
 
      void clear() {
+          std::lock_guard<std::mutex> lk(this->cache_lock);
           cachemap.clear();
           uselist.clear();
           bytes_used = 0;
@@ -163,4 +167,5 @@ class CoverArtCache {
      std::unordered_map<std::string, CacheEntry> cachemap;
      std::list<std::string> uselist;  //< List of keys ordered by use recency.
      std::size_t bytes_used = 0;      //< Size of cache in bytes.
+     std::mutex cache_lock;           //< A mutex lock for the cover art cache
 };
