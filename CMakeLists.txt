@@ -179,7 +179,7 @@ endif()
 
 FetchContent_Declare(
   discord-rpc
-    GIT_REPOSITORY https://github.com/EclipseMenu/discord-presence.git
+    GIT_REPOSITORY https://github.com/onegen-dev/discord-presence.git
     GIT_TAG 3b50b0854ec24f9b2d4cc8e28f9145f276bb998e
     GIT_PROGRESS TRUE
     UPDATE_DISCONNECTED ON
