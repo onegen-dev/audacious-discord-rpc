@@ -1,16 +1,13 @@
 # Audacious Discord RPC
 
-> [!WARNING]
-> *4.6.x compatibility is experimental and Linux-only for now (actively worked on)!*
-> *See [the compatibility table](#compatibility-table) for more info and correct download.*
-
 Discord Rich Presence (RPC) plugin for [Audacious][1]! \
 Displays what you’re vibing to in your Discord profile. 🧑‍🎤🎶
 
 <div align="center">
      <img
           src=".github/img/popout.png"
-          alt="Example user popout with Audacious Discord RPC" />
+          alt="Example user popout with Audacious Discord RPC" /><br />
+     <b>Downloads:</b> see <a href="#compatibility-table">#compatibility-table</a>.<br /><br />
 </div>
 
 This is a modernisation hard-fork by [onegen][4] of [`darktohka/audacious-plugin-rpc`][3]
@@ -138,8 +135,8 @@ sudo rm $(pkg-config --variable=plugin_dir audacious)/General/libaudacious-plugi
 
 | Audacious<br>version | Linux | Windows |
 |:---:|:---:|:---:|
-| 4.6.1 | [2.4-indev.5](https://github.com/onegen-dev/audacious-discord-rpc/releases/download/v2.4-indev.5/auddrpc-dev2.4.5-aud4.6.1-x86-lin.tar.xz) (experimental WiP) | [2.4-indev.5](https://github.com/onegen-dev/audacious-discord-rpc/releases/download/v2.4-indev.5/auddrpc-dev2.4.5-aud4.6.1-x86-lin.tar.xz) (WiP) |
-| 4.6.0 | [2.4-indev.5](https://github.com/onegen-dev/audacious-discord-rpc/releases/download/v2.4-indev.5/auddrpc-dev2.4.5-aud4.6.0-x86-lin.tar.xz) (WiP) |  |
+| 4.6.1 | [2.4](https://github.com/onegen-dev/audacious-discord-rpc/releases/download/v2.4/auddrpc-v2.4-x86-lin.tar.xz) (stable) | [2.4](https://github.com/onegen-dev/audacious-discord-rpc/releases/download/v2.4/auddrpc-v2.4-x86-win.zip) (stable) |
+| 4.6.0 | [2.4-indev.5](https://github.com/onegen-dev/audacious-discord-rpc/releases/download/v2.4-indev.5/auddrpc-dev2.4.5-aud4.6.0-x86-lin.tar.xz) (final) |  |
 | 4.5.x | [2.3.1](https://github.com/onegen-dev/audacious-discord-rpc/releases/download/v2.3.1/auddrpc-v2.3.1-x86-lin.tar.xz) (final) | [2.3.1](https://github.com/onegen-dev/audacious-discord-rpc/releases/download/v2.3.1/auddrpc-v2.3.1-x86-win.zip) (final) |
 
 ## Building
