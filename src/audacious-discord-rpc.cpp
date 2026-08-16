@@ -57,6 +57,7 @@ const PreferencesWidget RPCPlugin::widgets[] = {
     WidgetCombo(N_("Status display"),
                 WidgetInt(PLUGIN_ID, "status_display_type"),
                 {{status_display_items}, nullptr}),
+    WidgetButton(N_("Reconnect to Discord"), {reconnect_discord, nullptr}),
     WidgetButton(N_("Show on GitHub"), {open_github, nullptr})};
 
 static_assert(DISCORD_DEFAULT_DISPLAY == 0,
@@ -97,6 +98,7 @@ void init_discord() {
               AUDINFO("Discord RPC disconnected.\r\n");
          })
          .onErrored([](int, std::string_view msg) {
+              is_connected.store(false);
               AUDERR("Discord RPC error: %s\r\n", msg.data());
          });
      conn.initialize();
@@ -111,11 +113,21 @@ void clear_discord() {
      rpc.setLargeImageKey("logo").setLargeImageText("Audacious");
 }
 
+void reconnect_discord() {
+     AUDINFO("Discord RPC: reconnecting...\r\n");
+     ++req_id_now;  // Invalidate cover fetch tasks
+     is_connected.store(false);
+     conn.shutdown();
+     conn.initialize();
+}
+
 void cleanup_discord() {
-     std::lock_guard<std::mutex> lock(rpc_lock);
-     if (!is_connected.load()) return;
-     rpc = discord::Presence{};  // Full reset
-     conn.clearPresence();
+     ++req_id_now;  // Invalidate cover fetch tasks
+     {
+          std::lock_guard<std::mutex> lock(rpc_lock);
+          rpc = discord::Presence{};  // Full reset
+          if (is_connected.load()) conn.clearPresence();
+     }
      conn.shutdown();
      is_connected.store(false);
      AUDINFO("Discord RPC shut down.\r\n");
