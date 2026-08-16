@@ -99,7 +99,8 @@ void init_discord() {
          })
          .onErrored([](int, std::string_view msg) {
               is_connected.store(false);
-              AUDERR("Discord RPC error: %s\r\n", msg.data());
+              AUDERR("Discord RPC error: %.*s\r\n",
+                     static_cast<int>(msg.size()), msg.data());
          });
      conn.initialize();
 }
