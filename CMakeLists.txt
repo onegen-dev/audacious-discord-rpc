@@ -180,12 +180,13 @@ endif()
 FetchContent_Declare(
   discord-rpc
     GIT_REPOSITORY https://github.com/onegen-dev/discord-presence.git
-    GIT_TAG 3b50b0854ec24f9b2d4cc8e28f9145f276bb998e
+    GIT_TAG 03919f625e076f6c17e62de1a5aa3a2406874c63
     GIT_PROGRESS TRUE
     UPDATE_DISCONNECTED ON
 )
 
 FetchContent_MakeAvailable(discord-rpc)
+
 if(IS_DIRECTORY "${discord-rpc_SOURCE_DIR}")
   set_property(
     DIRECTORY ${discord-rpc_SOURCE_DIR}
