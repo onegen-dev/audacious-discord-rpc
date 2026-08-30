@@ -73,6 +73,13 @@ const PluginPreferences RPCPlugin::prefs
 
 EXPORT RPCPlugin aud_plugin_instance;
 
+/**
+ * @brief Dispatch callback to call functions (specifically
+ * playback_to_presence) on the main thread even when not on main thread.
+ * @note Added as a resolution to issue #18.
+ */
+static QueuedFunc ready_dispatch;
+
 /* === Discord RPC Setup === */
 
 static discord::RPCManager& conn = discord::RPCManager::get();
@@ -83,7 +90,7 @@ void init_discord() {
      conn.onReady([](const discord::User&) {
               is_connected.store(true);
               AUDINFO("Discord RPC connected.\r\n");
-              playback_to_presence();  // Directly played track? #8
+              ready_dispatch.queue([] { playback_to_presence(); });
          })
          .onDisconnected([](int, std::string_view) {
               is_connected.store(false);
