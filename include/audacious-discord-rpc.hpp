@@ -73,7 +73,6 @@ constexpr int DISCORD_DEFAULT_DISPLAY
 void init_discord();
 void clear_discord();
 void cleanup_discord();
-void reconnect_discord();
 void update_presence();
 void init_presence();
 
