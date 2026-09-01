@@ -97,7 +97,9 @@ void init_discord() {
               AUDINFO("Discord RPC disconnected.\r\n");
          })
          .onErrored([](int, std::string_view msg) {
-              AUDERR("Discord RPC error: %s\r\n", msg.data());
+              is_connected.store(false);
+              AUDERR("Discord RPC error: %.*s\r\n",
+                     static_cast<int>(msg.size()), msg.data());
          });
      conn.initialize();
 }
@@ -113,9 +115,9 @@ void clear_discord() {
 
 void cleanup_discord() {
      std::lock_guard<std::mutex> lock(rpc_lock);
-     if (!is_connected.load()) return;
      rpc = discord::Presence{};  // Full reset
-     conn.clearPresence();
+     if (is_connected.load()) conn.clearPresence();
+
      conn.shutdown();
      is_connected.store(false);
      AUDINFO("Discord RPC shut down.\r\n");
