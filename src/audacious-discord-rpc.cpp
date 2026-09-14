@@ -48,6 +48,10 @@ static const ComboItem status_display_items[]
                  static_cast<int>(discord::StatusDisplayType::State))};
 
 const PreferencesWidget RPCPlugin::widgets[] = {
+    WidgetCheck(N_("Use embedded art!"),
+                WidgetBool(PLUGIN_ID, "auto_tunnel")),
+    WidgetCheck(N_("YouTube rip thumbnail fallback (only works on certain yt rips)"),
+                WidgetBool(PLUGIN_ID, "youtube_thumb_fallback")),
 #if (!(defined(DISABLE_RPC_CAF)) && !(DISABLE_RPC_CAF))
     WidgetCheck(N_("(UNSTABLE) Fetch album covers from MusicBrainz/CAA"),
                 WidgetBool(PLUGIN_ID, "fetch_covers")),
@@ -62,11 +66,12 @@ const PreferencesWidget RPCPlugin::widgets[] = {
 static_assert(DISCORD_DEFAULT_DISPLAY == 0,
               "defaults[] status_display_type is out of sync!");
 
-const char* const RPCPlugin::defaults[] = {
+const char* const RPCPlugin::defaults[]
+    = {"auto_tunnel",      "FALSE", "youtube_thumb_fallback", "FALSE",
 #if (!(defined(DISABLE_RPC_CAF)) && !(DISABLE_RPC_CAF))
-    "fetch_covers",     "FALSE",
+       "fetch_covers",     "FALSE",
 #endif
-    "hide_when_paused", "FALSE", "status_display_type", "0", nullptr};
+       "hide_when_paused", "FALSE", "status_display_type",    "0",     nullptr};
 
 const PluginPreferences RPCPlugin::prefs
     = {{widgets}, nullptr, nullptr, nullptr};
@@ -208,10 +213,61 @@ void playback_to_presence() {
           rpc.setStartTimestamp(0).setEndTimestamp(0);
      }
 
+     // try the track's own embedded art first (via audacious's own art
+     // cache, works for whatever formats audacious itself supports), then
+     // fall back to a youtube thumbnail if that's enabled and the comment
+     // tag has a video url in it. neither of these needs a network
+     // request on our end, aud_art_request just reads what audacious
+     // already cached, and the youtube thumbnail url is deterministic.
+     bool image_upgraded = false;
+
+     if (aud_get_bool(PLUGIN_ID, "auto_tunnel")) {
+          ensure_tunnel_started();
+          if (g_tunnel.ready()) {
+               String filename = aud_drct_get_filename();
+               bool art_queued = false;
+               AudArtPtr art
+                   = aud_art_request(filename, AUD_ART_FILE, &art_queued);
+               AUDINFO(
+                   "Discord RPC: art request for %s -> queued=%d "
+                   "got_item=%d file=%s\r\n",
+                   (const char*)filename, (int)art_queued, (int)(bool)art.get(),
+                   art.file() ? art.file() : "(null)");
+               if (!art_queued && art.get() && art.file()) {
+                    std::string served_name = g_art_server.publish(art.file());
+                    AUDINFO("Discord RPC: publish() -> '%s'\r\n",
+                            served_name.c_str());
+                    if (!served_name.empty()) {
+                         rpc.setLargeImageKey(g_tunnel.url() + "/"
+                                              + served_name);
+                         image_upgraded = true;
+                    }
+               }
+               // if art_queued is true, audacious is still extracting it
+               // in the background, "art ready" hook below will trigger
+               // another pass through this function once it's done
+          } else {
+               AUDINFO(
+                   "Discord RPC: auto_tunnel on but tunnel not ready "
+                   "yet\r\n");
+          }
+     }
+
+     if (!image_upgraded && aud_get_bool(PLUGIN_ID, "youtube_thumb_fallback")) {
+          String comment = tuple.get_str(Tuple::Comment);
+          std::string thumb = youtube_thumbnail_from_comment(
+              audstr_empty(comment) ? "" : (const char*)comment);
+          if (!thumb.empty()) {
+               rpc.setLargeImageKey(thumb);
+               image_upgraded = true;
+          }
+     }
+
      update_presence();
      AUDINFO("Discord RPC: playback_to_presence updated RPC\r\n");
 
-     if (has_album && aud_get_bool(PLUGIN_ID, "fetch_covers")) {
+     if (!image_upgraded && has_album
+         && aud_get_bool(PLUGIN_ID, "fetch_covers")) {
           String album_artist = tuple.get_str(Tuple::AlbumArtist);
           bool has_album_artist = !audstr_empty(album_artist);
 
@@ -261,6 +317,10 @@ bool RPCPlugin::init() {
      hook_associate("playback pause", on_playback_update_rpc, nullptr);
      hook_associate("playback unpause", on_playback_update_rpc, nullptr);
      hook_associate("title change", on_playback_update_rpc, nullptr);
+     // fires once audacious finishes extracting art in the background, so
+     // a track that was still "queued" on the first pass gets a second
+     // shot at picking up its own cover instead of being stuck on the logo
+     hook_associate("art ready", on_playback_update_rpc, nullptr);
      return true;
 }
 
@@ -273,5 +333,8 @@ void RPCPlugin::cleanup() {
      hook_dissociate("playback pause", on_playback_update_rpc);
      hook_dissociate("playback unpause", on_playback_update_rpc);
      hook_dissociate("title change", on_playback_update_rpc);
+     hook_dissociate("art ready", on_playback_update_rpc);
+     g_tunnel.stop();
+     g_art_server.stop();
      cleanup_discord();
 }

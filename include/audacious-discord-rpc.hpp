@@ -22,6 +22,7 @@
 #include <libaudcore/mainloop.h>
 #include <libaudcore/plugin.h>
 #include <libaudcore/preferences.h>
+#include <libaudcore/probe.h>
 #include <libaudcore/runtime.h>
 #include <libaudcore/tuple.h>
 
@@ -43,6 +44,10 @@
 #     include "covers.hpp"
 #endif
 
+#include "art-server.hpp"
+#include "tunnel.hpp"
+#include "youtube-thumb.hpp"
+
 #ifdef _WIN32
 #     define EXPORT __declspec(dllexport)
 #else
@@ -63,6 +68,35 @@ inline std::atomic<unsigned long long> req_id_now{0};
 /** Checks if the req_id is stale */
 inline bool cover_fetch_stop(unsigned long long req_id) {
      return req_id != req_id_now.load();
+}
+
+/** Port the local cover art server listens on. Not exposed as a setting,
+ * a fixed high port is unlikely to collide with anything. */
+constexpr unsigned short ART_SERVER_PORT = 38472;
+
+inline CloudflareTunnel g_tunnel;
+inline ArtServer g_art_server;
+
+void playback_to_presence();  // Audacious metadata -> Discord RPC (main)
+
+/** Starts the tunnel + local art server the first time they're needed,
+ * does nothing on later calls. Guarded so flipping the setting on and
+ * off during a session doesn't spawn multiple tunnels. */
+inline void ensure_tunnel_started() {
+     static std::once_flag flag;
+     if (!aud_get_bool(PLUGIN_ID, "auto_tunnel")) return;
+     std::call_once(flag, [] {
+          if (!g_art_server.start(ART_SERVER_PORT)) return;
+          // without this, whatever's playing when the tunnel finishes
+          // starting (a couple seconds after launch) would just sit on
+          // the logo until the next track change happens to retry it
+          g_tunnel.set_on_ready([] { playback_to_presence(); });
+          if (!g_tunnel.start(ART_SERVER_PORT))
+               AUDERR(
+                   "Discord RPC: couldn't start cloudflared, is it "
+                   "installed and on PATH? falling back to the static "
+                   "logo image.\r\n");
+     });
 }
 
 /* === Discord Functions === */
@@ -113,24 +147,24 @@ inline void open_github() {
      auto ret
          = ShellExecuteW(NULL, L"open", L"" PLUGIN_URL, NULL, NULL, SW_NORMAL);
      if ((intptr_t)ret <= 32) AUDERR("Failed to open URL: %s\r\n", PLUGIN_URL);
-     /**
-      * If the function succeeds, it returns a value greater than 32.
-      *
-      * @cite
-      * https://learn.microsoft.com/en-us/windows/win32/api/shellapi/nf-shellapi-shellexecutew#return-value
-      */
+          /**
+           * If the function succeeds, it returns a value greater than 32.
+           *
+           * @cite
+           * https://learn.microsoft.com/en-us/windows/win32/api/shellapi/nf-shellapi-shellexecutew#return-value
+           */
 #else
      int ret = system("xdg-open " PLUGIN_URL);
      if (ret == -1 || ret == 127)
           AUDERR("Failed to open URL: %s\r\n", PLUGIN_URL);
-     /**
-      * -1 indicates fork/exec error and 127 means the command was not
-      * found. Other errors are related to the user environment and are not
-      * worth blocking over: “xdg-open inherits most of the flaws of its
-      * configuration and the underlying opener”
-      *
-      * @cite
-      * https://manpages.ubuntu.com/manpages/questing/en/man1/xdg-open.1.html
-      */
+          /**
+           * -1 indicates fork/exec error and 127 means the command was not
+           * found. Other errors are related to the user environment and are not
+           * worth blocking over: “xdg-open inherits most of the flaws of its
+           * configuration and the underlying opener”
+           *
+           * @cite
+           * https://manpages.ubuntu.com/manpages/questing/en/man1/xdg-open.1.html
+           */
 #endif
 }

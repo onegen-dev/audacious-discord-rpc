@@ -1,3 +1,39 @@
+## Changes in this personal fork
+
+### WARNING: PROBABLY DOES NOT WORK ON WINDOWS.
+### WARNING: YOU NEED `CLOUDFLARED` INSTALLED ON YOUR `PATH`
+This fork adds two settings on top of upstream. Both are off by default.
+
+Starts a Cloudflare tunnel for your files embedded cover art
+
+Instead of grabbing album art from MusicBrainz, this reads the
+cover art already embedded in the file itself (via Audacious's own art
+cache) Since Discord needs a public URL for images, not a local file
+path, enabling this runs `cloudflared tunnel --url ...` for you and
+automatically and serves the current track's art through it. **You need
+`cloudflared` installed and on your `PATH`** for this to do anything, if
+it's missing the plugin logs a message in the terminal (if ran through Audacious -V)
+and just falls back to the default static logo instead
+
+The tunnel is a free Cloudflare quick tunnel, the URL is random and
+only lives as long as Audacious does, that is an inherent property of
+how quick tunnels work, not something which is directly controlled by the plugin
+
+**"YouTube fallback"**
+
+If there's no embedded art, this checks the
+file's comment tag for a `youtube.com` or `youtu.be` link, some yt2mp3 tools
+write the source URL there. If found, it uses YouTube's
+own public thumbnail for that video, no tunnel needed for this obviously.
+Discord fetches the URL directly.
+
+This only works if your rip actually stored the video URL somewhere
+in its tags. If your files don't have that, this toggle just won't find anything to use.
+
+Priority when a track updates: embedded art (if the tunnel toggle is
+on and ready) > YouTube thumbnail (if that toggle is on and a URL was
+found) > MusicBrainz (if that's on) > static logo.
+
 # Audacious Discord RPC
 
 Discord Rich Presence (RPC) plugin for [Audacious][1]! \
@@ -149,7 +185,7 @@ aligned or want to help with development, you can always build this plugin yours
 **On Linux**, you need to install cURL and Audacious development libraries via the native
 package manager (or wrapper idc) as `audacious-dev` (Debian/Ubuntu-based DEB) or `audacious-devel`
 (Red Hat-based RPM incl. SUSE). The development libraries should be automatically installed
-on Arch-based distributions. \
+on Arch-based distributions. \
 **On Windows**, you need a [MSYS2](https://www.msys2.org) MINGW64 environment.
 To ensure all you need is installed on there, run this:
 

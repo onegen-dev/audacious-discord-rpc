@@ -168,6 +168,21 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(glaze)
 
+# == cpp-httplib (for the local cover art server) == #
+#
+# fetched as a bare header rather than through their CMakeLists, we only
+# need plain http (no tls, no zlib), so there's nothing to configure
+
+FetchContent_Declare(
+  httplib_header
+    URL https://raw.githubusercontent.com/yhirose/cpp-httplib/v0.56.0/httplib.h
+    DOWNLOAD_NO_EXTRACT TRUE
+)
+FetchContent_MakeAvailable(httplib_header)
+
+add_library(httplib INTERFACE)
+target_include_directories(httplib INTERFACE "${httplib_header_SOURCE_DIR}")
+
 # == O. Nemeš’s Discord RPC == #
 
 if(WIN32)
@@ -255,6 +270,7 @@ target_link_libraries(audacious-discord-rpc PRIVATE
   audcore
   glaze::glaze
   discord-rpc
+  httplib
 )
 
 if(NOT DISABLE_RPC_CAF)
