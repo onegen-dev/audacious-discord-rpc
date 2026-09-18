@@ -9,7 +9,7 @@
                 "${workspaceFolder}/build/_deps/glaze-src/**"
             ],
             "defines": [],
-            "compilerPath": "/usr/lib64/ccache/g++",
+            "compilerPath": "/usr/bin/g++",
             "cStandard": "c23",
             "cppStandard": "c++23",
             "intelliSenseMode": "linux-gcc-x64"
