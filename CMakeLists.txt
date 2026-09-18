@@ -233,7 +233,7 @@ else()
 endif()
 
 # Once determined in the decision tree above, set the compile flag:
-if(DISABLED_RPC_CAF)
+if(DISABLE_RPC_CAF)
   target_compile_definitions(audacious-discord-rpc PRIVATE DISABLE_RPC_CAF=1)
 endif()
 
