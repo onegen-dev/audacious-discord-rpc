@@ -19,7 +19,7 @@
 #include <string>
 #include <thread>
 
-#include "covers-cache.hpp"
+#include "cover-cache.hpp"
 
 #ifdef _WIN32
 #     include "fetch-win.hpp"  // Uses WinHTTP
