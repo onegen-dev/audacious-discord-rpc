@@ -3,7 +3,7 @@
  * @brief WinHTTP-based fetcher for use on Windows 10+.
  * @note Made for Audacious-Discord-RPC project.
  * @author onegen <onegen@onegen.dev>
- * @date 2026-06-29 (last modified)
+ * @date 2026-09-18 (last modified)
  *
  * @license MIT
  * @copyright Copyright (c) 2025–2026 onegen
@@ -17,6 +17,7 @@
 #include <winhttp.h>
 
 #include <optional>
+#include <stop_token>
 #include <string>
 
 #ifndef AUDDBG
@@ -29,7 +30,8 @@
 #     define AUDERR(...) ((void)0)
 #endif
 
-constexpr DWORD FETCH_TIMEO = 15000;  // [ms]
+constexpr DWORD FETCH_TIMEO = 10000;         // For sending & receiving [ms]
+constexpr DWORD FETCH_TIMEO_CONNECT = 5000;  // For resolving & connecting [ms]
 
 /* === Helpers === */
 
@@ -73,7 +75,10 @@ static const wchar_t* ua
     = L"Audacious-Discord-RPC/master "
       "(+https://github.com/onegen-dev/audacious-discord-rpc)";
 
-static std::optional<std::string> fetch(const std::string& url) noexcept {
+static std::optional<std::string> fetch(const std::string& url,
+                                        const std::stop_token& stop
+                                        = {}) noexcept {
+     if (stop.stop_requested()) return std::nullopt;
      std::wstring wurl = wstringify(url);
 
      /** @cite
@@ -118,10 +123,13 @@ static std::optional<std::string> fetch(const std::string& url) noexcept {
                   GetLastErrorAsString().c_str());
           cleanup();
           return std::nullopt;
+     } else if (stop.stop_requested()) {
+          cleanup();
+          return std::nullopt;
      }
 
-     if (!WinHttpSetTimeouts(req, FETCH_TIMEO, FETCH_TIMEO, FETCH_TIMEO,
-                             FETCH_TIMEO)
+     if (!WinHttpSetTimeouts(req, FETCH_TIMEO_CONNECT, FETCH_TIMEO_CONNECT,
+                             FETCH_TIMEO, FETCH_TIMEO)
          || !WinHttpSendRequest(req, NULL, 0, NULL, 0, 0, 0)
          || !WinHttpReceiveResponse(req, NULL)) {
           AUDINFO("Discord RPC WinHTTP fetch failed: %s\r\n",
@@ -135,6 +143,12 @@ static std::optional<std::string> fetch(const std::string& url) noexcept {
      unsigned long n_available = 0;
 
      do {
+          if (stop.stop_requested()) {
+               AUDDBG("Discord RPC: WinHTTP fetch cancelled\r\n");
+               cleanup();
+               return std::nullopt;  // Requested shutdown
+          }
+
           if (!WinHttpQueryDataAvailable(req, &n_available)) {
                AUDINFO("Discord RPC WinHTTP fetch failed: %s\r\n",
                        GetLastErrorAsString().c_str());

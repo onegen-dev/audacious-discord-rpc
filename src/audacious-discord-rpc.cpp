@@ -3,7 +3,7 @@
  * @brief Discord Rich Presence plugin for Audacious
  * @author onegen <onegen@onegen.dev>
  * @author Derzsi Dániel <daniel@tohka.us>
- * @date 2026-06-29 (last modified)
+ * @date 2026-09-18 (last modified)
  *
  * @license MIT
  * @copyright Copyright (c) 2024–2026 onegen
@@ -105,9 +105,9 @@ void init_discord() {
 }
 
 void clear_discord() {
-     std::lock_guard<std::mutex> lock(rpc_lock);
      if (!is_connected.load()) return;
-     ++req_id_now;               // Invalidate cover fetch tasks
+     cover_cancel();  // Invalidate cover fetch tasks
+     std::lock_guard<std::mutex> lock(rpc_lock);
      rpc = discord::Presence{};  // Full reset
      conn.clearPresence();
      rpc.setLargeImageKey("logo").setLargeImageText("Audacious");
@@ -133,7 +133,6 @@ void init_presence() {
      rpc = discord::Presence{};
      rpc.setLargeImageKey("logo").setLargeImageText("Audacious");
      update_presence();
-     req_id_now = 0;
 }
 
 /* === Audacious playback -> Discord RPC (main function) === */
@@ -220,33 +219,49 @@ void playback_to_presence() {
      }
 }
 
-/* == Attempt to fetch cover art, if enabled */
+/* == Attempt to fetch cover art, if enabled == */
 
-void cover_to_presence(const String& artist, const String& album) {
-#if (defined(DISABLE_RPC_CAF) && DISABLE_RPC_CAF)
-     return;
-#else
-     std::string artist_str = (const char*)artist;
-     std::string album_str = (const char*)album;
-     unsigned long long req_id = ++req_id_now;
-     std::thread([req_id, artist_str = std::move(artist_str),
-                  album_str = std::move(album_str)] {
-          if (req_id != req_id_now.load(std::memory_order_relaxed)) return;
-          auto url = cover_lookup(artist_str, album_str, &req_id_now, req_id);
-          if (url && !url->empty()
-              && req_id == req_id_now.load(std::memory_order_relaxed)) {
-               std::lock_guard<std::mutex> lock(rpc_lock);
-               rpc.setLargeImageKey(*url);
-               update_presence();
-               AUDINFO("Discord RPC: cover fetch task %llu applied\r\n",
-                       req_id);
-          } else {
+#if (!(defined(DISABLE_RPC_CAF)) && !(DISABLE_RPC_CAF))
+
+static QueuedFunc cover_dispatch;  //< Carries cover art lookups between threads
+
+static CoverWorker cover_worker([](unsigned long long req_id,
+                                   const std::string& url,
+                                   std::stop_token stop) {
+     cover_dispatch.queue([req_id, url, stop = std::move(stop)] {
+          if (stop.stop_requested()) {
                AUDINFO("Discord RPC: dismissed stale fetch task %llu\r\n",
                        req_id);
+               return;
           }
-     }).detach();
-#endif
+          std::lock_guard<std::mutex> lock(rpc_lock);
+          rpc.setLargeImageKey(url);
+          update_presence();
+          AUDINFO("Discord RPC: cover fetch task %llu applied\r\n", req_id);
+     });
+});
+
+void cover_worker_start() { cover_worker.start(); }
+
+void cover_worker_stop() {
+     cover_worker.stop();
+     cover_dispatch.stop();
 }
+
+void cover_cancel() { cover_worker.cancel(); }
+
+void cover_to_presence(const String& artist, const String& album) {
+     cover_worker.submit((const char*)artist, (const char*)album);
+}
+
+#else
+
+void cover_worker_start() {}
+void cover_worker_stop() {}
+void cover_cancel() {}
+void cover_to_presence(const String&, const String&) {}
+
+#endif
 
 /* === Hook RPC to Audacious === */
 
@@ -254,6 +269,7 @@ bool RPCPlugin::init() {
      aud_config_set_defaults(PLUGIN_ID, defaults);
      init_discord();
      init_presence();
+     cover_worker_start();
      hook_associate("playback ready", on_playback_update_rpc, nullptr);
      hook_associate("playback end", on_playback_update_rpc, nullptr);
      hook_associate("playback stop", on_playback_update_rpc, nullptr);
@@ -273,5 +289,7 @@ void RPCPlugin::cleanup() {
      hook_dissociate("playback pause", on_playback_update_rpc);
      hook_dissociate("playback unpause", on_playback_update_rpc);
      hook_dissociate("title change", on_playback_update_rpc);
+     cover_worker_stop();
+     ready_dispatch.stop();
      cleanup_discord();
 }

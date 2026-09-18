@@ -2,7 +2,7 @@
  * @file covers.hpp
  * @brief Cover art fetching functionality for Audacious Discord RPC.
  * @author onegen <onegen@onegen.dev>
- * @date 2026-06-29 (last modified)
+ * @date 2026-09-18 (last modified)
  *
  * @license MIT
  * @copyright Copyright (c) 2025–2026 onegen
@@ -13,7 +13,9 @@
 
 #include <glaze/glaze.hpp>
 
+#include <algorithm>
 #include <optional>
+#include <stop_token>
 #include <string>
 #include <thread>
 
@@ -48,9 +50,14 @@ inline std::string esc_quotes(const std::string& s) {
      return r;
 }
 
-inline bool is_cancelled(const std::atomic<unsigned long long>* active_req_id,
-                         unsigned long long this_req_id) {
-     return active_req_id && (this_req_id != active_req_id->load());
+inline bool stop_sleep(unsigned int ms, const std::stop_token& stop) {
+     constexpr unsigned int SLICE = 100;  // [ms]
+     for (unsigned int slept = 0; slept < ms; slept += SLICE) {
+          if (stop.stop_requested()) return false;
+          std::this_thread::sleep_for(
+              std::chrono::milliseconds(std::min(SLICE, ms - slept)));
+     }
+     return !stop.stop_requested();
 }
 
 /* === Structs for fetched objects === */
@@ -116,10 +123,11 @@ struct CAAImageSearchResult {
 /* === Exported Function === */
 
 // TODO: Function this big probably should not be in a header file.
-inline std::optional<std::string> cover_lookup(
-    const std::string& artist, const std::string& album,
-    const std::atomic<unsigned long long>* active_req_id = nullptr,
-    unsigned long long this_req_id = 0) {
+inline std::optional<std::string> cover_lookup(const std::string& artist,
+                                               const std::string& album,
+                                               std::stop_token stop = {},
+                                               unsigned long long this_req_id
+                                               = 0) {
      // Cache
      auto cache_res = cache.get(artist, album);
      if (cache_res.has_value()) {
@@ -132,12 +140,7 @@ inline std::optional<std::string> cover_lookup(
      unsigned int tries = 0;
      do {
           // 2 second debounce (in case user is mashing NEXT)
-          for (int i = 0; i < 20; ++i) {
-               // 20 sleeps × 100 ms = 2000 ms = 2 s
-               if (is_cancelled(active_req_id, this_req_id))
-                    return std::nullopt;
-               std::this_thread::sleep_for(std::chrono::milliseconds(100));
-          }
+          if (!stop_sleep(FETCH_DEBOUNCE, stop)) return std::nullopt;
 
           /* The query disregards the track artist, focusing on the album artist
            * a la LastFM. Album title is prioritised over album alias. Artist
@@ -165,8 +168,8 @@ inline std::optional<std::string> cover_lookup(
                             + enc_q.value() + "&fmt=json";
 
           // MB (get release MBID)
-          if (is_cancelled(active_req_id, this_req_id)) return std::nullopt;
-          auto mb_json = fetch(req);
+          if (stop.stop_requested()) return std::nullopt;
+          auto mb_json = fetch(req, stop);
           if (!mb_json) {
                AUDINFO(
                    "Discord RPC: MusicBrainz sent a bad reply (task %llu)\r\n",
@@ -204,8 +207,9 @@ inline std::optional<std::string> cover_lookup(
                   mbid.c_str(), this_req_id);
 
           // CAA (fetch all artwork)
-          if (is_cancelled(active_req_id, this_req_id)) return std::nullopt;
-          auto caa_json = fetch("https://coverartarchive.org/release/" + mbid);
+          if (stop.stop_requested()) return std::nullopt;
+          auto caa_json
+              = fetch("https://coverartarchive.org/release/" + mbid, stop);
           if (!caa_json) {
                AUDINFO("Discord RPC: CAA sent a bad reply (task %llu)\r\n",
                        this_req_id);

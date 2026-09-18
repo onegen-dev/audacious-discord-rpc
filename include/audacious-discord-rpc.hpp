@@ -3,7 +3,7 @@
  * @brief Discord Rich Presence plugin for Audacious (header)
  * @author onegen <onegen@onegen.dev>
  * @author Derzsi Dániel <daniel@tohka.us>
- * @date 2026-06-29 (last modified)
+ * @date 2026-09-18 (last modified)
  *
  * @license MIT
  * @copyright Copyright (c) 2024–2026 onegen
@@ -40,7 +40,8 @@
 #endif
 
 #if (!(defined(DISABLE_RPC_CAF)) && !(DISABLE_RPC_CAF))
-#     include "covers.hpp"
+#     include <cstring>
+#     include "cover-worker.hpp"
 #endif
 
 #ifdef _WIN32
@@ -77,9 +78,20 @@ void update_presence();
 void init_presence();
 
 void playback_to_presence();  // Audacious metadata -> Discord RPC (main)
-void cover_to_presence(
-    const String &artist,
-    const String &album);  // Attempts to fetch cover, if enabled
+
+/* === Cover Art Fetching === */
+
+/**
+ * @note These are no-ops when the plugin is built without cover art fetching.
+ * @see include/covers-worker.hpp
+ */
+
+void cover_worker_start();  //< Initialises the cover workker (on plugin init)
+void cover_worker_stop();   //< Cancels & joins the fetch thread (on plugin
+                            // cleanup)
+void cover_cancel();        //< Cancels an ongoing cover art fetch
+void cover_to_presence(const String &artist,
+                       const String &album);  //< Queues a cover art fetch
 
 inline void on_playback_update_rpc(void *, void *) { playback_to_presence(); }
 
