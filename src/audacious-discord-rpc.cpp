@@ -110,7 +110,7 @@ void clear_discord() {
      std::lock_guard<std::mutex> lock(rpc_lock);
      rpc = discord::Presence{};  // Full reset
      conn.clearPresence();
-     rpc.setLargeImageKey("logo").setLargeImageText("Audacious");
+     rpc.setLargeImageKey("logo");
 }
 
 void cleanup_discord() {
@@ -131,7 +131,7 @@ void update_presence() {
 void init_presence() {
      std::lock_guard<std::mutex> lock(rpc_lock);
      rpc = discord::Presence{};
-     rpc.setLargeImageKey("logo").setLargeImageText("Audacious");
+     rpc.setLargeImageKey("logo");
      update_presence();
 }
 
@@ -169,7 +169,6 @@ void playback_to_presence() {
      title = field_sanitise(title);
      artist = field_sanitise(artist);
      bool has_album = !audstr_empty(album);
-     album = has_album ? field_sanitise(album) : String("[unknown]");
      int status_display_type = aud_get_int(PLUGIN_ID, "status_display_type");
 
      std::lock_guard<std::mutex> lock(rpc_lock);
@@ -179,9 +178,12 @@ void playback_to_presence() {
              static_cast<discord::StatusDisplayType>(status_display_type))
          .setDetails((const char*)title)
          .setState((const char*)artist)
-         .setLargeImageText((const char*)album)
          .setSmallImageKey(playing ? "play" : "pause")
          .setSmallImageText("Audacious");
+     if (has_album) {
+          album = field_sanitise(album);
+          rpc.setLargeImageText((const char*)album);
+     }
 
      if (playing && tuple.get_value_type(Tuple::Length) == Tuple::Int) {
           const auto now = std::chrono::system_clock::now();
