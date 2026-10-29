@@ -17,7 +17,12 @@
 
 class RPCPlugin : public GeneralPlugin {
    public:
-     static const char about[];
+     static constexpr const char* about
+         = N_("Discord Rich Presence (RPC) playing status plugin\n"
+              "https://github.com/onegen-dev/audacious-discord-rpc\n"
+              " © onegen <onegen@onegen.dev> (2024–2025)\n"
+              " © Derzsi Dániel <daniel@tohka.us> et al. (2018–2022)\n\n"
+              "Displays the current playing track as your Discord status.");
      static const PreferencesWidget widgets[];
      static const PluginPreferences prefs;
      static const char* const defaults[];
@@ -31,13 +36,11 @@ class RPCPlugin : public GeneralPlugin {
      void cleanup();
 };
 
-const char RPCPlugin::about[]
-    = "Discord Rich Presence (RPC) playing status plugin\n"
-      "https://github.com/onegen-dev/audacious-discord-rpc\n"
-      " © onegen <onegen@onegen.dev> (2024–2025)\n"
-      " © Derzsi Dániel <daniel@tohka.us> et al. (2018–2022)\n\n"
-      "Displays the current playing track as your Discord status.\n"
-      "(Discord should be running before this plugin is loaded.)";
+[[maybe_unused]] static const bool locale_bound = [] {
+     bindtextdomain(PLUGIN_ID, PLUGIN_LOCALE_DIR);
+     bind_textdomain_codeset(PLUGIN_ID, "UTF-8");
+     return true;
+}();
 
 static const ComboItem status_display_items[]
     = {ComboItem(N_("Music player"),
@@ -169,7 +172,7 @@ void playback_to_presence() {
      title = field_sanitise(title);
      artist = field_sanitise(artist);
      bool has_album = !audstr_empty(album);
-     album = has_album ? field_sanitise(album) : String("[unknown]");
+     album = has_album ? field_sanitise(album) : String(_("[unknown]"));
      int status_display_type = aud_get_int(PLUGIN_ID, "status_display_type");
 
      std::lock_guard<std::mutex> lock(rpc_lock);

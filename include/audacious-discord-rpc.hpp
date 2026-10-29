@@ -103,7 +103,7 @@ inline bool audstr_empty(const String &str) {
 }
 
 inline String field_sanitise(const String &field) {
-     if (audstr_empty(field)) return String("[unknown]");
+     if (audstr_empty(field)) return String(_("[unknown]"));
 
      const char *field_c = field;
      auto field_len = strlen(field_c);

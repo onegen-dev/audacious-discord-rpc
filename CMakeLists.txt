@@ -26,7 +26,9 @@ endif()
 include(FetchContent)
 include(FindPkgConfig)
 include(ExternalProject)
+include(GNUInstallDirs)
 find_package(Git REQUIRED)
+find_package(Gettext REQUIRED)
 
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
@@ -41,10 +43,18 @@ project(
     LANGUAGES CXX
 )
 
+find_package(Intl REQUIRED)
+
 file(GLOB_RECURSE SOURCES "src/*.cpp")
 add_library(audacious-discord-rpc MODULE ${SOURCES})
 target_include_directories(audacious-discord-rpc PRIVATE "include")
 target_compile_features(audacious-discord-rpc PUBLIC cxx_std_23)
+target_compile_definitions(audacious-discord-rpc PRIVATE
+  HAVE_GETTEXT=1
+  PACKAGE=\"discord-rpc\"
+  PLUGIN_LOCALE_DIR=\"${CMAKE_INSTALL_FULL_DATAROOTDIR}/locale\"
+)
+target_include_directories(audacious-discord-rpc PRIVATE ${Intl_INCLUDE_DIRS})
 
 # == Compilation Options == #
 target_compile_options(audacious-discord-rpc
@@ -255,6 +265,7 @@ target_link_libraries(audacious-discord-rpc PRIVATE
   audcore
   glaze::glaze
   discord-rpc
+  ${Intl_LIBRARIES}
 )
 
 if(NOT DISABLE_RPC_CAF)
@@ -270,6 +281,19 @@ set_target_properties(audacious-discord-rpc
     PREFIX ""
     OUTPUT_NAME "discord-rpc"
 )
+
+# === TRANSLATIONS === #
+
+set(ZH_CN_MO "${CMAKE_CURRENT_BINARY_DIR}/zh_CN/LC_MESSAGES/discord-rpc.mo")
+add_custom_command(
+  OUTPUT "${ZH_CN_MO}"
+  COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_BINARY_DIR}/zh_CN/LC_MESSAGES"
+  COMMAND ${GETTEXT_MSGFMT_EXECUTABLE} -c -o "${ZH_CN_MO}" "${CMAKE_CURRENT_SOURCE_DIR}/po/zh_CN.po"
+  DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/po/zh_CN.po"
+  VERBATIM
+)
+add_custom_target(translations ALL DEPENDS "${ZH_CN_MO}")
+install(FILES "${ZH_CN_MO}" DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/locale/zh_CN/LC_MESSAGES")
 
 # === INSTALL OPTIONS === #
 

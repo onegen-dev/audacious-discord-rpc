@@ -2,6 +2,7 @@
     "configurations": [
         {
             "name": "Linux",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
             "includePath": [
                 "/usr/include/**",
                 "${workspaceFolder}/include/**",
@@ -16,6 +17,7 @@
         },
         {
             "name": "Win32",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
             "includePath": [
                 "${workspaceFolder}/include/**",
                 "${workspaceFolder}/build/_deps/audacious-src/src/**",

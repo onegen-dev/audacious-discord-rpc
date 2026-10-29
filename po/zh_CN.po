@@ -1,0 +1,53 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: audacious-discord-rpc 2.4\n"
+"PO-Revision-Date: 2026-10-29 00:00+0000\n"
+"Last-Translator: Audacious Discord RPC contributors\n"
+"Language-Team: Chinese (Simplified)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+msgid "Discord RPC"
+msgstr "Discord RPC"
+
+msgid ""
+"Discord Rich Presence (RPC) playing status plugin\n"
+"https://github.com/onegen-dev/audacious-discord-rpc\n"
+" © onegen <onegen@onegen.dev> (2024–2025)\n"
+" © Derzsi Dániel <daniel@tohka.us> et al. (2018–2022)\n"
+"\n"
+"Displays the current playing track as your Discord status."
+msgstr ""
+"Discord 动态状态（RPC）插件\n"
+"https://github.com/onegen-dev/audacious-discord-rpc\n"
+" © onegen <onegen@onegen.dev> (2024–2025)\n"
+" © Derzsi Dániel <daniel@tohka.us> 等 (2018–2022)\n"
+"\n"
+"将当前播放的曲目显示为 Discord 状态。"
+
+msgid "Music player"
+msgstr "音乐播放器"
+
+msgid "Song title"
+msgstr "歌曲标题"
+
+msgid "Artist name"
+msgstr "艺术家名称"
+
+msgid "(UNSTABLE) Fetch album covers from MusicBrainz/CAA"
+msgstr "（不稳定）从 MusicBrainz/CAA 获取专辑封面"
+
+msgid "Hide presence when paused"
+msgstr "暂停时隐藏动态状态"
+
+msgid "Status display"
+msgstr "状态显示内容"
+
+msgid "Show on GitHub"
+msgstr "在 GitHub 上查看"
+
+msgid "[unknown]"
+msgstr "[未知]"
