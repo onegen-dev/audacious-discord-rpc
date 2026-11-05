@@ -135,7 +135,8 @@ sudo rm $(pkg-config --variable=plugin_dir audacious)/General/libaudacious-plugi
 
 | Audacious<br>version | Linux | Windows |
 |:---:|:---:|:---:|
-| 4.6.1 | [2.4](https://github.com/onegen-dev/audacious-discord-rpc/releases/download/v2.4/auddrpc-v2.4-x86-lin.tar.xz) (stable) | [2.4](https://github.com/onegen-dev/audacious-discord-rpc/releases/download/v2.4/auddrpc-v2.4-x86-win.zip) (stable) |
+| 4.6.2 | [2.4.1](https://github.com/onegen-dev/audacious-discord-rpc/releases/download/v2.4.1/auddrpc-v2.4.1-x86-lin.tar.xz) (stable) | |
+| 4.6.1 | [2.4](https://github.com/onegen-dev/audacious-discord-rpc/releases/download/v2.4/auddrpc-v2.4-x86-lin.tar.xz) (final) | [2.4](https://github.com/onegen-dev/audacious-discord-rpc/releases/download/v2.4/auddrpc-v2.4-x86-win.zip) (stable) |
 | 4.6.0 | [2.4-indev.5](https://github.com/onegen-dev/audacious-discord-rpc/releases/download/v2.4-indev.5/auddrpc-dev2.4.5-aud4.6.0-x86-lin.tar.xz) (final) |  |
 | 4.5.x | [2.3.1](https://github.com/onegen-dev/audacious-discord-rpc/releases/download/v2.3.1/auddrpc-v2.3.1-x86-lin.tar.xz) (final) | [2.3.1](https://github.com/onegen-dev/audacious-discord-rpc/releases/download/v2.3.1/auddrpc-v2.3.1-x86-win.zip) (final) |
 
