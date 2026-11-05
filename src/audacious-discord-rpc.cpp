@@ -169,7 +169,7 @@ void playback_to_presence() {
      title = field_sanitise(title);
      artist = field_sanitise(artist);
      bool has_album = !audstr_empty(album);
-     album = has_album ? field_sanitise(album) : String("[unknown]");
+     album = has_album ? field_sanitise(album) : String("");
      int status_display_type = aud_get_int(PLUGIN_ID, "status_display_type");
 
      std::lock_guard<std::mutex> lock(rpc_lock);
