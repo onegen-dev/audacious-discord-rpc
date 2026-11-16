@@ -34,7 +34,7 @@ class RPCPlugin : public GeneralPlugin {
 const char RPCPlugin::about[]
     = "Discord Rich Presence (RPC) playing status plugin\n"
       "https://github.com/onegen-dev/audacious-discord-rpc\n"
-      " © onegen <onegen@onegen.dev> (2024–2025)\n"
+      " © onegen <onegen@onegen.dev> (2024–2026)\n"
       " © Derzsi Dániel <daniel@tohka.us> et al. (2018–2022)\n\n"
       "Displays the current playing track as your Discord status.\n"
       "(Discord should be running before this plugin is loaded.)";
@@ -83,7 +83,7 @@ static QueuedFunc ready_dispatch;
 /* === Discord RPC Setup === */
 
 static discord::RPCManager& conn = discord::RPCManager::get();
-static discord::Presence rpc;
+static discord::Presence rpc{};
 
 void init_discord() {
      conn.setClientID(DISCORD_APP_ID);
@@ -104,35 +104,70 @@ void init_discord() {
      conn.initialize();
 }
 
-void clear_discord() {
-     if (!is_connected.load()) return;
-     cover_cancel();  // Invalidate cover fetch tasks
-     std::lock_guard<std::mutex> lock(rpc_lock);
-     rpc = discord::Presence{};  // Full reset
-     conn.clearPresence();
+void init_presence() {
+     std::lock_guard<std::mutex> lock(rpc_lk);
+     rpc.clear();
      rpc.setLargeImageKey("logo").setLargeImageText("Audacious");
 }
 
 void cleanup_discord() {
-     std::lock_guard<std::mutex> lock(rpc_lock);
+     std::lock_guard<std::mutex> lock(rpc_lk);
+     rpc_throttle.stop();
+     rpc_dirty = false;
      rpc = discord::Presence{};  // Full reset
      if (is_connected.load()) conn.clearPresence();
 
      conn.shutdown();
      is_connected.store(false);
-     AUDINFO("Discord RPC shut down.\r\n");
 }
 
 void update_presence() {
      if (!is_connected.load()) return;
+     /* Discord requires a throttle of 1 update per 15 seconds,
+      * or at least it did for original RPC and I can’t verify it
+      * that well now. This block does just that, executing updates
+      * only once in 15 seconds.
+      */
+     if (rpc_throttle.running()) {
+          /* A throttle (waiting for the 15 second limit) is running.
+           * The rpc_dirty flag tells it that it needs to recheck the
+           * presence before sending it. That’s it for this update.
+           */
+          AUDDBG("Discord RPC: Presence update throttled.\r\n");
+          rpc_dirty = true;
+          return;
+     }
+
+     // No throttle is active => send the update.
      conn.setPresence(rpc).refresh();
+     AUDDBG("Discord RPC: Present update sent.\r\n");
+
+     /* Start a throttle/timer. This uses Audacious’ QueuedFunc
+      * which runs periodically and asynchroniously (non-blocking).
+      */
+     rpc_throttle.start(DISCORD_UPDATE_THROTTLE, [] {
+          /* If rpc_dirty (presence update is queued up), update is sent
+           * and function remains running (so it waits the throttle time
+           * and runs this closure again).
+           * If dirty flag is unset, throttle function ends, allowing
+           * the next update to be executed without delay.
+           */
+          if (rpc_dirty) {
+               conn.setPresence(rpc).refresh();
+               rpc_dirty = false;
+               AUDDBG("Discord RPC: Presence update (throttled) sent.\r\n");
+          } else {
+               rpc_throttle.stop();
+               AUDDBG("Discord RPC: Throttle timer ended.\r\n");
+          }
+     });
 }
 
-void init_presence() {
-     std::lock_guard<std::mutex> lock(rpc_lock);
-     rpc = discord::Presence{};
-     rpc.setLargeImageKey("logo").setLargeImageText("Audacious");
-     update_presence();
+void clear_presence() {
+     if (!is_connected.load()) return;
+     cover_cancel();   // Invalidate cover fetch tasks
+     init_presence();  // Re-initialises it without updating
+     conn.clearPresence();
 }
 
 /* === Audacious playback -> Discord RPC (main function) === */
@@ -140,17 +175,17 @@ void init_presence() {
 void playback_to_presence() {
      if (!is_connected.load()) return;
      if (!aud_drct_get_playing() || !aud_drct_get_ready()) {
-          clear_discord();
+          clear_presence();
           return;
      }
 
      const bool playing = !aud_drct_get_paused();
      if (aud_get_bool(PLUGIN_ID, "hide_when_paused") && !playing) {
-          clear_discord();
+          clear_presence();
           return;
      }
 
-     AUDDBG("Discord RPC: playback_to_presence called\r\n");
+     // Get standard metadata (artist, track and album)
      const Tuple tuple = aud_drct_get_tuple();
      String title = tuple.get_str(Tuple::Title);
      String artist = tuple.get_str(Tuple::Artist);
@@ -161,18 +196,20 @@ void playback_to_presence() {
           if (audstr_empty(title)) {
                // Give up
                AUDINFO("Discord RPC: no title or filename, giving up.\r\n");
-               clear_discord();
+               clear_presence();
                return;
           }
      }
 
+     // Sanitise standard meta (make sure they are encodable)
      title = field_sanitise(title);
      artist = field_sanitise(artist);
      bool has_album = !audstr_empty(album);
      album = has_album ? field_sanitise(album) : String("");
      int status_display_type = aud_get_int(PLUGIN_ID, "status_display_type");
 
-     std::lock_guard<std::mutex> lock(rpc_lock);
+     // Setting standard metadata to presence object
+     std::lock_guard<std::mutex> lock(rpc_lk);
      rpc.setLargeImageKey("logo")
          .setActivityType(discord::ActivityType::Listening)
          .setStatusDisplayType(
@@ -183,6 +220,7 @@ void playback_to_presence() {
          .setSmallImageKey(playing ? "play" : "pause")
          .setSmallImageText("Audacious");
 
+     // Add timestamp, if possible
      if (playing && tuple.get_value_type(Tuple::Length) == Tuple::Int) {
           const auto now = std::chrono::system_clock::now();
           const auto start_time
@@ -207,9 +245,11 @@ void playback_to_presence() {
           rpc.setStartTimestamp(0).setEndTimestamp(0);
      }
 
+     // Send updated presence (throttled, see its implementation for more info)
      update_presence();
-     AUDINFO("Discord RPC: playback_to_presence updated RPC\r\n");
+     AUDINFO("Discord RPC: playback_to_presence updated presence\r\n");
 
+     // Cover art fetching call, if appropriate
      if (has_album && aud_get_bool(PLUGIN_ID, "fetch_covers")) {
           String album_artist = tuple.get_str(Tuple::AlbumArtist);
           bool has_album_artist = !audstr_empty(album_artist);
@@ -234,7 +274,7 @@ static CoverWorker cover_worker([](unsigned long long req_id,
                        req_id);
                return;
           }
-          std::lock_guard<std::mutex> lock(rpc_lock);
+          std::lock_guard<std::mutex> lock(rpc_lk);
           rpc.setLargeImageKey(url);
           update_presence();
           AUDINFO("Discord RPC: cover fetch task %llu applied\r\n", req_id);
@@ -256,6 +296,7 @@ void cover_to_presence(const String& artist, const String& album) {
 
 #else
 
+// Cover functions are NOOP if compiled w/o them
 void cover_worker_start() {}
 void cover_worker_stop() {}
 void cover_cancel() {}

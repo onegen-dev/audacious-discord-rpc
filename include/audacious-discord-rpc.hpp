@@ -54,9 +54,14 @@
 #define PLUGIN_ID "discord-rpc"
 #define PLUGIN_URL "https://github.com/onegen-dev/audacious-discord-rpc"
 #define DISCORD_APP_ID "1428914566795890738"
+#define DISCORD_UPDATE_THROTTLE (int)15000  // [ms]
 
+/** Audacious mainloop function to send throttled RPC updates */
+inline QueuedFunc rpc_throttle;
 /** Mutual access lock to presence data editing */
-inline std::mutex rpc_lock;
+inline std::mutex rpc_lk;
+/** Whether a throttled presence update is queued up. */
+inline bool rpc_dirty;
 /** "Is Discord connected?" atomic flag */
 inline std::atomic<bool> is_connected{false};
 /** Current cover fetching request number */
@@ -72,7 +77,7 @@ constexpr int DISCORD_DEFAULT_DISPLAY
     = static_cast<int>(discord::StatusDisplayType::Name);
 
 void init_discord();
-void clear_discord();
+void clear_presence();
 void cleanup_discord();
 void update_presence();
 void init_presence();
