@@ -41,10 +41,9 @@ project(
     LANGUAGES CXX
 )
 
-file(GLOB_RECURSE SOURCES "src/*.cpp")
-add_library(audacious-discord-rpc MODULE ${SOURCES})
-target_include_directories(audacious-discord-rpc PRIVATE "include")
+add_library(audacious-discord-rpc MODULE "src/audacious-discord-rpc.cpp")
 target_compile_features(audacious-discord-rpc PUBLIC cxx_std_23)
+target_include_directories(audacious-discord-rpc PRIVATE "include")
 
 # == Compilation Options == #
 target_compile_options(audacious-discord-rpc
@@ -71,7 +70,7 @@ target_compile_options(audacious-discord-rpc
       -fdebug-prefix-map=${CMAKE_SOURCE_DIR}=..
       -ffile-prefix-map=${CMAKE_SOURCE_DIR}=..
       $<$<NOT:$<BOOL:${WIN32}>>:  # Linux-only flags
-        -D_FORTIFY_SOURCE=2       # Safety-hardened buffers, hardened libc bounds
+        -D_FORTIFY_SOURCE=2       # Safety-hardened libc bounds in buffers
       >
     >
 
@@ -217,14 +216,17 @@ if(NOT DISABLE_RPC_CAF)
   if(WIN32)
     set(DISABLE_RPC_CAF FALSE)
     set(CURL_FOUND FALSE)
+    target_sources(audacious-discord-rpc PRIVATE "src/fetch-winhttp.cpp")
     message(STATUS "WIN build: WinHTTP will be used for cover art fetching.")
   else()
     find_package(CURL QUIET)
     if(NOT CURL_FOUND)
       set(DISABLE_RPC_CAF TRUE)
+      target_sources(audacious-discord-rpc PRIVATE "src/fetch-noop.cpp")
       message(WARNING "LIN build, no cURL: cover art fetching disabled.")
     else()
       set(DISABLE_RPC_CAF FALSE)
+      target_sources(audacious-discord-rpc PRIVATE "src/fetch-curl.cpp")
       message(STATUS "LIN build, found cURL: cURL will be used for cover art fetching.")
     endif()
   endif()
