@@ -38,7 +38,7 @@ using Headers = std::vector<std::pair<std::string, std::string>>;
 struct FetchRes {
      unsigned int status_http = 0;  // HTTP status code
      unsigned int status_exe = 0;   // Executor status code
-     std::string data;              // Response data, if applicable
+     std::string data{};            // Response data, if applicable
 };
 
 FetchRes fetch(const std::string& url, const Headers& headers = {},
