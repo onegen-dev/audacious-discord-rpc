@@ -52,8 +52,6 @@ const PreferencesWidget RPCPlugin::widgets[] = {
     WidgetCheck(N_("(UNSTABLE) Fetch album covers from MusicBrainz/CAA"),
                 WidgetBool(PLUGIN_ID, "fetch_covers")),
 #endif
-    WidgetCheck(N_("Hide presence when paused"),
-                WidgetBool(PLUGIN_ID, "hide_when_paused")),
     WidgetCombo(N_("Status display"),
                 WidgetInt(PLUGIN_ID, "status_display_type"),
                 {{status_display_items}, nullptr}),
@@ -64,9 +62,9 @@ static_assert(DISCORD_DEFAULT_DISPLAY == 0,
 
 const char* const RPCPlugin::defaults[] = {
 #if (!(defined(DISABLE_RPC_CAF)) && !(DISABLE_RPC_CAF))
-    "fetch_covers",     "FALSE",
+    "fetch_covers", "FALSE",
 #endif
-    "hide_when_paused", "FALSE", "status_display_type", "0", nullptr};
+    "status_display_type", "0", nullptr};
 
 const PluginPreferences RPCPlugin::prefs
     = {{widgets}, nullptr, nullptr, nullptr};
@@ -181,7 +179,7 @@ void playback_to_presence() {
      }
 
      const bool playing = !aud_drct_get_paused();
-     if (aud_get_bool(PLUGIN_ID, "hide_when_paused") && !playing) {
+     if (!playing) {
           clear_presence();
           return;
      }
