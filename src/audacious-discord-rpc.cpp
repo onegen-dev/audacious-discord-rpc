@@ -165,8 +165,9 @@ void update_presence() {
 
 void clear_presence() {
      if (!is_connected.load()) return;
-     cover_cancel();   // Invalidate cover fetch tasks
-     init_presence();  // Re-initialises it without updating
+     cover_cancel();  // Invalidate cover fetch tasks
+     rpc_throttle.stop();
+     rpc.clear();
      conn.clearPresence();
 }
 
