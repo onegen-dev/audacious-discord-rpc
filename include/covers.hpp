@@ -20,12 +20,7 @@
 #include <thread>
 
 #include "cover-cache.hpp"
-
-#ifdef _WIN32
-#     include "fetch-win.hpp"  // Uses WinHTTP
-#else
-#     include "fetch-lin.hpp"  // Uses cURL (libcurl)
-#endif
+#include "fetch.hpp"
 
 constexpr unsigned int FETCH_DEBOUNCE = 2000;  // [ms]
 constexpr unsigned int FETCH_MAX_RETRIES = 5;
@@ -131,10 +126,10 @@ inline std::optional<std::string> cover_lookup(const std::string& artist,
      // Cache
      auto cache_res = cache.get(artist, album);
      if (cache_res.has_value()) {
-          AUDINFO("Discord RPC: Cover art cache hit!\r\n");
+          AUDDBG("Discord RPC: Cover art cache hit!\r\n");
           return cache_res;
      } else {
-          AUDDBG("Discord RPC: Cover art cache miss, continuing...\r\n");
+          AUDDBG("Discord RPC: Cover art cache miss, fetching...\r\n");
      }
 
      unsigned int tries = 0;
@@ -161,39 +156,53 @@ inline std::optional<std::string> cover_lookup(const std::string& artist,
                           + "\"^2 OR label:\"" + esc_artist
                           + "\") AND (format:\"Digital Media\"^2 OR format:*)"
                           + " AND NOT status:\"Pseudo-Release\"";
-          auto enc_q = uri_encode(q);
-          if (!enc_q)
-               return std::nullopt;  // Skip retries, it’s unlikely to work
-          std::string req = "https://musicbrainz.org/ws/2/release?query="
-                            + enc_q.value() + "&fmt=json";
+          std::string req
+              = "https://musicbrainz.org/ws/2/release?query="
+                + static_cast<std::string>(str_encode_percent(q.c_str()))
+                + "&fmt=json";
 
           // MB (get release MBID)
           if (stop.stop_requested()) return std::nullopt;
-          auto mb_json = fetch(req, stop);
-          if (!mb_json) {
+          FetchRes mb_res
+              = fetch(req, {{"Accept", "application/json"}}, "GET", "", stop);
+          if (mb_res.status_exe != 0) {
                AUDINFO(
-                   "Discord RPC: MusicBrainz sent a bad reply (task %llu)\r\n",
+                   "Discord RPC: MusicBrainz fetch failed, exe code %u (task "
+                   "%llu)\r\n",
+                   mb_res.status_exe, this_req_id);
+               continue;
+          } else if (mb_res.status_http == 503) {
+               // Classic MB response, MB editors know this message intimately
+               AUDINFO(
+                   "Discord RPC: MusicBrainz web server is currently busy "
+                   "(task %llu)\r\n",
                    this_req_id);
+               continue;
+          } else if (mb_res.status_http != 200) {
+               AUDINFO(
+                   "Discord RPC: MusicBrainz fetch failed, HTTP code %u (task "
+                   "%llu)\r\n",
+                   mb_res.status_http, this_req_id);
                continue;
           }
 
-          MBReleaseSearchResult mb_res{};
+          MBReleaseSearchResult mb_search{};
           glz::error_ctx error
-              = glz::read<glz::opts{.error_on_unknown_keys = false}>(mb_res,
-                                                                     *mb_json);
+              = glz::read<glz::opts{.error_on_unknown_keys = false}>(
+                  mb_search, mb_res.data);
           if (error) {
                AUDINFO(
                    "Discord RPC: MusicBrainz sent a bad JSON (task %llu)\r\n",
                    this_req_id);
                continue;
-          } else if (mb_res.count == 0 || mb_res.releases.empty()) {
+          } else if (mb_search.count == 0 || mb_search.releases.empty()) {
                AUDINFO(
                    "Discord RPC: MusicBrainz found no releases (task %llu)\r\n",
                    this_req_id);
                return std::nullopt;
           }
 
-          MBRelease& mb_release = mb_res.releases[0];
+          MBRelease& mb_release = mb_search.releases[0];
           if (mb_release.score < 90) {
                AUDINFO(
                    "Discord RPC: MusicBrainz found no good-enough releases "
@@ -208,29 +217,47 @@ inline std::optional<std::string> cover_lookup(const std::string& artist,
 
           // CAA (fetch all artwork)
           if (stop.stop_requested()) return std::nullopt;
-          auto caa_json
-              = fetch("https://coverartarchive.org/release/" + mbid, stop);
-          if (!caa_json) {
-               AUDINFO("Discord RPC: CAA sent a bad reply (task %llu)\r\n",
+          FetchRes caa_res
+              = fetch("https://coverartarchive.org/release/" + mbid,
+                      {{"Accept", "application/json"}}, "GET", "", stop);
+          if (caa_res.status_exe != 0) {
+               AUDINFO(
+                   "Discord RPC: CAA fetch failed, exe code %u (task %llu)\r\n",
+                   caa_res.status_exe, this_req_id);
+               continue;
+          } else if (caa_res.status_http == 400) {
+               AUDINFO(
+                   "Discord RPC: CAA fetch reported bad request (task "
+                   "%llu)\r\n",
+                   this_req_id);
+               continue;
+          } else if (caa_res.status_http == 404) {
+               AUDINFO("Discord RPC: CAA found no cover art (task %llu)\r\n",
                        this_req_id);
+               continue;
+          } else if (caa_res.status_http != 200) {
+               AUDINFO(
+                   "Discord RPC: CAA fetch failed, HTTP code %u (task "
+                   "%llu)\r\n",
+                   caa_res.status_http, this_req_id);
                continue;
           }
 
           // CAA (parse and find front cover)
-          CAAImageSearchResult caa_res{};
+          CAAImageSearchResult caa_search{};
           error = glz::read<glz::opts{.error_on_unknown_keys = false}>(
-              caa_res, *caa_json);
+              caa_search, caa_res.data);
           if (error) {
                AUDINFO("Discord RPC: CAA sent a bad JSON (task %llu)\r\n",
                        this_req_id);
                continue;
-          } else if (caa_res.images.empty()) {
+          } else if (caa_search.images.empty()) {
                AUDINFO("Discord RPC: CAA found no images (task %llu)\r\n",
                        this_req_id);
                return std::nullopt;
           }
 
-          for (const CAAImage& image : caa_res.images) {
+          for (const CAAImage& image : caa_search.images) {
                if (!image.front) continue;
                std::string image_url;
                if (image.thumbnails.contains("1200")) {
