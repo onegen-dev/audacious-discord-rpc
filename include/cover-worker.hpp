@@ -116,16 +116,17 @@ class CoverWorker {
                          on_result(job.id, *url, stop);
                     else
                          AUDINFO(
-                             "Discord RPC: cover fetch task %llu found "
-                             "nothing\r\n",
+                             "Discord RPC: Cover fetch returned nothing (task "
+                             "%llu)\r\n",
                              job.id);
                } catch (const std::exception &e) {
-                    AUDERR("Discord RPC: cover fetch task %llu failed: %s\r\n",
-                           job.id, e.what());
+                    AUDERR(
+                        "Discord RPC: Cover fetch failed: %s (task %llu)\r\n",
+                        e.what(), job.id);
                } catch (...) {
                     AUDERR(
-                        "Discord RPC: cover fetch task %llu failed "
-                        "(unknown)\r\n",
+                        "Discord RPC: Cover fetch failed for reasons unknown "
+                        "(task %llu)\r\n",
                         job.id);
                }
 

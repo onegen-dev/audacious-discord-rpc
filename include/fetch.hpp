@@ -3,7 +3,7 @@
  * @brief HTTP fetcher header for Audacious-Discord-RPC.
  * @author onegen <onegen@onegen.dev>
  * @date 2026-11-17 (last modified)
- * 
+ *
  * @note This header provides a unified header for ‘fetch-{}.cpp’.
  *       The intent is that multiple ways of fetching with different
  *       executing frameworks can be implemented, like WinHTTP

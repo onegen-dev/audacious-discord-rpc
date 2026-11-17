@@ -140,7 +140,7 @@ void update_presence() {
 
      // No throttle is active => send the update.
      conn.setPresence(rpc).refresh();
-     AUDDBG("Discord RPC: Present update sent.\r\n");
+     AUDDBG("Discord RPC: Presence update sent.\r\n");
 
      /* Start a throttle/timer. This uses Audacious’ QueuedFunc
       * which runs periodically and asynchroniously (non-blocking).
@@ -195,7 +195,8 @@ void playback_to_presence() {
           title = tuple.get_str(Tuple::Basename);
           if (audstr_empty(title)) {
                // Give up
-               AUDINFO("Discord RPC: no title or filename, giving up.\r\n");
+               AUDINFO(
+                   "Discord RPC: Can't apply presence without a title.\r\n");
                clear_presence();
                return;
           }
@@ -247,14 +248,14 @@ void playback_to_presence() {
 
      // Send updated presence (throttled, see its implementation for more info)
      update_presence();
-     AUDINFO("Discord RPC: playback_to_presence updated presence\r\n");
+     AUDINFO("Discord RPC: Presence changed by playback_to_presence\r\n");
 
      // Cover art fetching call, if appropriate
      if (has_album && aud_get_bool(PLUGIN_ID, "fetch_covers")) {
           String album_artist = tuple.get_str(Tuple::AlbumArtist);
           bool has_album_artist = !audstr_empty(album_artist);
 
-          AUDINFO("Discord RPC: starting cover art fetching task\r\n");
+          AUDINFO("Discord RPC: New cover fetch task starting...\r\n");
           cover_to_presence(has_album_artist ? album_artist : artist, album);
      }
 }
@@ -270,14 +271,19 @@ static CoverWorker cover_worker([](unsigned long long req_id,
                                    std::stop_token stop) {
      cover_dispatch.queue([req_id, url, stop = std::move(stop)] {
           if (stop.stop_requested()) {
-               AUDINFO("Discord RPC: dismissed stale fetch task %llu\r\n",
-                       req_id);
+               AUDINFO(
+                   "Discord RPC: Cover fetch task %llu deemed stale, result "
+                   "dropped\r\n",
+                   req_id);
                return;
           }
           std::lock_guard<std::mutex> lock(rpc_lk);
           rpc.setLargeImageKey(url);
           update_presence();
-          AUDINFO("Discord RPC: cover fetch task %llu applied\r\n", req_id);
+          AUDINFO(
+              "Discord RPC: Cover fetch task %llu successful, result "
+              "applied\r\n",
+              req_id);
      });
 });
 

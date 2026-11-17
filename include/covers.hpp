@@ -126,10 +126,10 @@ inline std::optional<std::string> cover_lookup(const std::string& artist,
      // Cache
      auto cache_res = cache.get(artist, album);
      if (cache_res.has_value()) {
-          AUDDBG("Discord RPC: Cover art cache hit!\r\n");
+          AUDDBG("Discord RPC: Cover cache hit!\r\n");
           return cache_res;
      } else {
-          AUDDBG("Discord RPC: Cover art cache miss, fetching...\r\n");
+          AUDDBG("Discord RPC: Cover cache miss, fetching...\r\n");
      }
 
      unsigned int tries = 0;
@@ -212,8 +212,8 @@ inline std::optional<std::string> cover_lookup(const std::string& artist,
           }
 
           std::string mbid = mb_release.id;
-          AUDINFO("Discord RPC: MusicBrainz found release %s (task %llu)\r\n",
-                  mbid.c_str(), this_req_id);
+          AUDDBG("Discord RPC: MusicBrainz found release %s (task %llu)\r\n",
+                 mbid.c_str(), this_req_id);
 
           // CAA (fetch all artwork)
           if (stop.stop_requested()) return std::nullopt;
@@ -296,8 +296,7 @@ inline std::optional<std::string> cover_lookup(const std::string& artist,
           return std::nullopt;
      } while (++tries < FETCH_MAX_RETRIES);
 
-     AUDINFO(
-         "Discord RPC: Cover art fetch failed after %u retries (task %llu)\r\n",
-         FETCH_MAX_RETRIES, this_req_id);
+     AUDINFO("Discord RPC: Cover fetch failed after %u retries (task %llu)\r\n",
+             FETCH_MAX_RETRIES, this_req_id);
      return std::nullopt;
 }
